@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3R Assist — Pass B Visual Design</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #F7F6F2;
+    --surface:   #FFFFFF;
+    --border:    #E4E2DB;
+    --border-md: #CBC9C1;
+    --text-1:    #1A1916;
+    --text-2:    #6B6960;
+    --text-3:    #A09E96;
+    --accent:    #1A1916;
+
+    /* 3Rs semantic */
+    --rep-bg:    #EAF3DE; --rep-text:  #27500A; --rep-border: #639922;
+    --red-bg:    #FAEEDA; --red-text:  #633806; --red-border: #BA7517;
+    --ref-bg:    #E1F5EE; --ref-text:  #085041; --ref-border: #1D9E75;
+
+    /* Info */
+    --info-bg:   #E6F1FB; --info-text: #0C447C; --info-border: #378ADD;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --font: 'DM Sans', -apple-system, sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── Layout ── */
+  .page-header {
+    max-width: 720px;
+    margin: 0 auto 36px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .page-header h1 { font-size: 13px; font-weight: 500; color: var(--text-2); letter-spacing: .04em; text-transform: uppercase; }
+  .page-header span { font-size: 12px; color: var(--text-3); }
+
+  .section { max-width: 720px; margin: 0 auto 48px; }
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 14px; }
+
+  /* ── Tokens ── */
+  .token-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .color-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-size: 12px; color: var(--text-2); }
+  .chip-dot { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; border: 1px solid rgba(0,0,0,.06); }
+  .badge-demo { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid; }
+  .badge-rep { background: var(--rep-bg); color: var(--rep-text); border-color: var(--rep-border); }
+  .badge-red { background: var(--red-bg); color: var(--red-text); border-color: var(--red-border); }
+  .badge-ref { background: var(--ref-bg); color: var(--ref-text); border-color: var(--ref-border); }
+  .badge-jur { background: var(--info-bg); color: var(--info-text); border-color: var(--info-border); font-weight: 400; }
+  .badge-neutral { background: #F1EFE8; color: #5F5E5A; border-color: #B4B2A9; font-weight: 400; }
+
+  /* ── App chrome ── */
+  .app-frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .app-nav {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    gap: 4px;
+  }
+  .nav-logo {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-1);
+    margin-right: 16px;
+    letter-spacing: -.01em;
+  }
+  .nav-link {
+    font-size: 13px;
+    color: var(--text-2);
+    padding: 0 10px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .nav-link.active {
+    color: var(--text-1);
+    border-bottom-color: var(--text-1);
+    font-weight: 500;
+  }
+  .nav-spacer { flex: 1; }
+  .nav-auth {
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 5px 12px;
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  /* ── S1 ── */
+  .s1-body {
+    padding: 48px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .s1-inner { width: 100%; max-width: 520px; }
+  .s1-heading { font-size: 17px; font-weight: 500; color: var(--text-1); margin-bottom: 4px; }
+  .s1-sub { font-size: 13px; color: var(--text-2); margin-bottom: 18px; }
+  .input-shell {
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 14px;
+    transition: border-color .15s;
+  }
+  .input-shell:focus-within { border-color: var(--text-1); }
+  .lang-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .lang-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: var(--text-2);
+  }
+  .lang-pill.active {
+    background: var(--surface);
+    border-color: var(--border-md);
+    color: var(--text-1);
+  }
+  .proto-area {
+    width: 100%;
+    min-height: 110px;
+    padding: 12px 14px;
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--text-2);
+    background: var(--surface);
+    resize: none;
+    line-height: 1.65;
+  }
+  .s1-actions { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .btn-primary {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--surface);
+    background: var(--text-1);
+    border: none;
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .link-ghost { font-size: 12px; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .anon-line { font-size: 11px; color: var(--text-3); text-align: center; }
+
+  /* ── S3 ── */
+  .s3-body { padding: 20px 20px 24px; }
+  .s3-meta { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .s3-count { font-size: 14px; font-weight: 500; }
+  .btn-export {
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--text-2);
+    background: transparent;
+    border: 1px solid var(--border-md);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .s3-params { font-size: 12px; color: var(--text-3); margin-bottom: 14px; font-family: var(--mono); }
+  .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .filter-label-sm { font-size: 11px; color: var(--text-3); }
+  .filter-sel {
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--text-2);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    appearance: none;
+    padding-right: 22px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23A09E96' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+
+  /* Result card */
+  .r-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: var(--surface);
+    transition: border-color .12s;
+  }
+  .r-card:hover { border-color: var(--border-md); }
+  .r-card.dim { opacity: .65; }
+  .r-head { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .r-title { font-size: 13px; font-weight: 500; color: var(--text-1); flex: 1; line-height: 1.4; }
+  .r-score { font-size: 12px; color: var(--text-3); font-family: var(--mono); padding-top: 1px; white-space: nowrap; }
+  .r-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
+  .r-matched { font-size: 11px; color: var(--text-3); margin-bottom: 6px; }
+  .r-matched span { color: var(--text-2); }
+  .r-sources { display: flex; gap: 10px; flex-wrap: wrap; }
+  .r-src { font-size: 11px; color: var(--info-text); text-decoration: none; display: flex; align-items: center; gap: 3px; }
+  .r-src:hover { text-decoration: underline; }
+
+  /* Feedback */
+  .feedback-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .fb-label { font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+  .fb-stars { display: flex; gap: 5px; }
+  .fb-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .fb-dot:hover { background: var(--bg); border-color: var(--text-1); color: var(--text-1); }
+  .fb-sub { font-size: 11px; color: var(--text-3); margin-left: 8px; align-self: center; }
+  .suggest-link { font-size: 12px; color: var(--text-2); margin-top: 12px; text-align: center; }
+  .suggest-link a { color: var(--info-text); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* ── Notes footer ── */
+  .design-note {
+    max-width: 720px;
+    margin: 0 auto 24px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border-md);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .design-note strong { color: var(--text-1); font-weight: 500; }
+
+  svg.icon { width: 14px; height: 14px; vertical-align: -2px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>3R Assist — Pass B Visual Design</h1>
+  <span>M2.5 · Alta fidelidade (estilo, tipografia, espaçamento)</span>
+</div>
+
+<!-- ── Design Tokens ── -->
+<div class="section">
+  <div class="section-label">Sistema de cores</div>
+  <div class="token-row">
+    <div class="color-chip"><div class="chip-dot" style="background:#F7F6F2; border-color:#CBC9C1;"></div>#F7F6F2 — fundo</div>
+    <div class="color-chip"><div class="chip-dot" style="background:#FFFFFF;"></div>#FFFFFF — superfície</div>
+    <div class="color-chip"><div class="chip-dot" style="background:#E4E2DB;"></div>#E4E2DB — borda padrão</div>
+    <div class="color-chip"><div class="chip-dot" style="background:#1A1916;"></div>#1A1916 — texto primário / CTA</div>
+    <div class="color-chip"><div class="chip-dot" style="background:#6B6960;"></div>#6B6960 — texto secundário</div>
+  </div>
+  <div class="section-label" style="margin-top:16px;">Badges 3Rs — única cor semântica da interface</div>
+  <div class="token-row" style="align-items:center;">
+    <span class="badge-demo badge-rep">Substituição</span>
+    <span class="badge-demo badge-red">Redução</span>
+    <span class="badge-demo badge-ref">Refinamento</span>
+    <span class="badge-demo badge-jur">Brasil / Intl.</span>
+    <span class="badge-demo badge-neutral">Intl. apenas</span>
+  </div>
+</div>
+
+<!-- ── S1 Screen ── -->
+<div class="section">
+  <div class="section-label">S1 — Input</div>
+  <div class="app-frame">
+    <nav class="app-nav">
+      <span class="nav-logo">3R Assist</span>
+      <a class="nav-link active">Analisar</a>
+      <a class="nav-link">Buscar</a>
+      <div class="nav-spacer"></div>
+      <span class="nav-auth">Entrar</span>
+    </nav>
+    <div class="s1-body">
+      <div class="s1-inner">
+        <h2 class="s1-heading">Descreva seu protocolo experimental</h2>
+        <p class="s1-sub">Em português ou inglês — o sistema extrai os parâmetros automaticamente.</p>
+        <div class="input-shell">
+          <div class="lang-bar">
+            <span class="lang-pill active">PT</span>
+            <span class="lang-pill">EN</span>
+          </div>
+          <textarea class="proto-area" rows="5" readonly>Utilizamos camundongos Wistar machos para teste de toxicidade aguda por inalação de composto X. O objetivo é determinar a CL50 para submissão regulatória à ANVISA.</textarea>
+        </div>
+        <div class="s1-actions">
+          <button class="btn-primary">
+            Analisar protocolo
+            <svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <span class="link-ghost">Busca direta com filtros →</span>
+        </div>
+        <div class="divider"></div>
+        <p class="anon-line">Continuar sem conta — histórico e exportação disponíveis após cadastro</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── S3 Screen ── -->
+<div class="section">
+  <div class="section-label">S3 — Resultados</div>
+  <div class="app-frame">
+    <nav class="app-nav">
+      <span class="nav-logo">3R Assist</span>
+      <a class="nav-link active">Analisar</a>
+      <a class="nav-link">Buscar</a>
+      <div class="nav-spacer"></div>
+      <span class="nav-auth">Entrar</span>
+    </nav>
+    <div class="s3-body">
+      <div class="s3-meta">
+        <span class="s3-count">4 alternativas encontradas</span>
+        <button class="btn-export">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Exportar PDF
+        </button>
+      </div>
+      <p class="s3-params">Mus musculus · toxicidade aguda · inalação · segurança de substâncias</p>
+
+      <div class="filter-bar">
+        <span class="filter-label-sm">Filtrar:</span>
+        <select class="filter-sel"><option>Classe 3Rs</option><option>Substituição</option><option>Redução</option><option>Refinamento</option></select>
+        <select class="filter-sel"><option>Jurisdição</option><option>Brasil</option><option>Internacional</option><option>Brasil / Intl.</option></select>
+      </div>
+
+      <!-- Card 1 -->
+      <div class="r-card">
+        <div class="r-head">
+          <span class="r-title">In vitro acute inhalation testing — EPISKIN™</span>
+          <span class="r-score">95%</span>
+        </div>
+        <div class="r-badges">
+          <span class="badge-demo badge-rep">Substituição</span>
+          <span class="badge-demo badge-jur">Brasil / Intl.</span>
+          <span class="badge-demo badge-neutral" style="font-size:11px;">ECVAM validado</span>
+        </div>
+        <p class="r-matched">Correspondências: <span>modelo biológico · procedimento · área de aplicação</span></p>
+        <div class="r-sources">
+          <a href="#" class="r-src">
+            <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            EURL ECVAM TSAR
+          </a>
+          <a href="#" class="r-src">
+            <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            OECD TG 439
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="r-card">
+        <div class="r-head">
+          <span class="r-title">Reconstructed human epithelium (RHE) model — skin absorption variant</span>
+          <span class="r-score">82%</span>
+        </div>
+        <div class="r-badges">
+          <span class="badge-demo badge-rep">Substituição</span>
+          <span class="badge-demo badge-neutral">Intl. apenas</span>
+        </div>
+        <p class="r-matched">Correspondências: <span>procedimento · endpoint</span></p>
+        <div class="r-sources">
+          <a href="#" class="r-src">
+            <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            ALT Web — Johns Hopkins CAAT
+          </a>
+        </div>
+      </div>
+
+      <!-- Card 3 (dim) -->
+      <div class="r-card dim">
+        <div class="r-head">
+          <span class="r-title">Redução de tamanho de grupo — design estatístico adaptativo</span>
+          <span class="r-score">61%</span>
+        </div>
+        <div class="r-badges">
+          <span class="badge-demo badge-red">Redução</span>
+          <span class="badge-demo badge-jur">Brasil / Intl.</span>
+        </div>
+        <p class="r-matched">Correspondências: <span>modelo biológico</span></p>
+        <div class="r-sources">
+          <a href="#" class="r-src">
+            <svg class="icon" style="width:11px;height:11px;" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+            CONCEA RN 37
+          </a>
+        </div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="feedback-block">
+        <p class="fb-label">Estas recomendações foram úteis?</p>
+        <div class="fb-stars" style="align-items:center;">
+          <span class="fb-dot">1</span>
+          <span class="fb-dot">2</span>
+          <span class="fb-dot">3</span>
+          <span class="fb-dot">4</span>
+          <span class="fb-dot">5</span>
+          <span class="fb-sub">+ comentário opcional</span>
+        </div>
+      </div>
+      <p class="suggest-link">Método não listado? <a href="#">Sugerir →</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Design notes -->
+<div class="design-note">
+  <strong>Decisões visuais do Pass B</strong><br>
+  <strong>Tom:</strong> "Clareza científica" — off-white quente como fundo (não branco hospitalar), tipografia precisa, sem cor decorativa.<br>
+  <strong>Cor:</strong> Os badges 3Rs são o <em>único</em> uso de cor semântica. Tudo o mais é cinza/preto. Isso força o olhar para o que importa: a classificação de cada método.<br>
+  <strong>Cards com baixa relevância</strong> (≤65%) aparecem com opacity reduzida — sem remover, mas indicando menor confiança.<br>
+  <strong>Score</strong> em monospace, discreto no canto superior direito do card.<br>
+  <strong>CTA primário:</strong> preto sobre branco — sem cor de destaque. A seriedade do contexto científico pede sobriedade.<br>
+  <strong>Questão aberta:</strong> O tom precisa ser validado com a Karynn — ela conhece os pesquisadores/CEUAs. A paleta quente pode parecer informal demais para um contexto regulatório formal.
+</div>
+
+</body>
+</html>
