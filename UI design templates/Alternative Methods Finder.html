@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<!-- saved from url=(0046)https://alternative-methods-finder.vercel.app/ -->
+<html lang="pt-br"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Alternative Methods Finder</title>
+    <link rel="icon" type="image/png" href="./Alternative Methods Finder_files/mouse.png">
+
+    <style>
+        html {
+            box-sizing: border-box;
+        }
+
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        body {
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            min-height: 100dvh;
+            margin: 0;
+            padding: 24px 16px 32px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+
+        .container textarea,
+        .container button {
+            box-sizing: border-box;
+        }
+
+        .app-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 0 0 16px;
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .app-title .app-icon {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .mode-segment {
+            display: flex;
+            width: 100%;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            background: #0f172a;
+        }
+
+        .mode-segment label {
+            flex: 1;
+            margin: 0;
+            display: flex;
+            cursor: pointer;
+            font-size: 12px;
+            color: #94a3b8;
+            border-right: 1px solid #334155;
+            user-select: none;
+        }
+
+        .mode-segment label:last-child {
+            border-right: none;
+        }
+
+        .mode-segment input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .mode-segment input:focus-visible + span {
+            outline: 2px solid #3b82f6;
+            outline-offset: -2px;
+        }
+
+        .mode-segment label span {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 6px;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .mode-segment input:checked + span {
+            background: #334155;
+            color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .mode-segment label:hover input:not(:checked) + span {
+            color: #cbd5e1;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+            border: none;
+            padding: 10px;
+            resize: none;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .sample-methods {
+            margin-top: 10px;
+        }
+
+        .sample-methods label {
+            display: block;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        .sample-methods select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .sample-methods select:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 1px;
+        }
+
+        .response {
+            margin-top: 20px;
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .response[hidden] {
+            display: none !important;
+        }
+
+        .response--plain {
+            white-space: pre-wrap;
+        }
+
+        .response--error {
+            border: 1px solid #b91c1c;
+            background: #1c1917;
+            color: #fecaca;
+        }
+
+        .response--md {
+            white-space: normal;
+            overflow-x: auto;
+        }
+
+        .response--md :first-child {
+            margin-top: 0;
+        }
+
+        .response--md :last-child {
+            margin-bottom: 0;
+        }
+
+        .response--md h1 {
+            font-size: 1.35rem;
+            margin: 0 0 0.75rem;
+            font-weight: 700;
+        }
+
+        .response--md h2 {
+            font-size: 1.15rem;
+            margin: 1.25rem 0 0.5rem;
+            color: #f1f5f9;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.35rem;
+        }
+
+        .response--md h3 {
+            font-size: 1rem;
+            margin: 1rem 0 0.5rem;
+            color: #cbd5e1;
+        }
+
+        .response--md hr {
+            border: none;
+            border-top: 1px solid #334155;
+            margin: 1rem 0;
+        }
+
+        .response--md table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.75rem 0;
+            font-size: 12px;
+        }
+
+        .response--md th,
+        .response--md td {
+            border: 1px solid #334155;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .response--md th {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .response--md tr:nth-child(even) td {
+            background: rgba(30, 41, 59, 0.45);
+        }
+
+        .response--md blockquote {
+            margin: 0.75rem 0;
+            padding: 0.5rem 0 0.5rem 1rem;
+            border-left: 4px solid #3b82f6;
+            color: #cbd5e1;
+            background: rgba(59, 130, 246, 0.08);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .response--md a {
+            color: #60a5fa;
+        }
+
+        .response--md a:hover {
+            text-decoration: underline;
+        }
+
+        .response--md p {
+            margin: 0.5rem 0;
+        }
+
+        .status-bar {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.45;
+            min-height: 2.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-sizing: border-box;
+            border: 1px solid transparent;
+        }
+
+        .status-bar[hidden] {
+            display: none !important;
+        }
+
+        .status-bar--loading {
+            background: #0f172a;
+            border-color: #334155;
+            color: #94a3b8;
+        }
+
+        .status-bar--error {
+            background: #1c1917;
+            border-color: #b91c1c;
+            color: #fecaca;
+            justify-content: flex-start;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+<meta id="acfifjfajpekbmhmjppnmmjgmhjkildl"></head>
+<body data-new-gr-c-s-check-loaded="14.1299.0" data-gr-ext-installed="">
+
+<div class="container">
+    <h1 class="app-title">
+        <img class="app-icon" src="./Alternative Methods Finder_files/mouse.png" width="44" height="44" alt="" decoding="async">
+        <span>Alternative Methods Finder</span>
+    </h1>
+
+    <div class="mode-segment" role="radiogroup" aria-label="Run mode">
+        <label>
+            <input type="radio" name="runMode" value="mock">
+            <span>Mock</span>
+        </label>
+        <label>
+            <input type="radio" name="runMode" value="test" checked="">
+            <span>Test mode</span>
+        </label>
+        <label>
+            <input type="radio" name="runMode" value="production">
+            <span>Production mode</span>
+        </label>
+    </div>
+
+    <textarea id="prompt" placeholder="Paste Materials &amp; Methods, or a short topic (e.g. rabies diagnosis)."></textarea>
+
+    <div class="sample-methods" id="sampleMethodsBlock">
+        <label for="sampleSelect">Sample methods</label>
+        <select id="sampleSelect" aria-label="Load a sample Materials and Methods excerpt">
+            <option value="">— Choose a sample —</option>
+        <option value="1">Acute Toxicity — LD50</option><option value="2">Repeated Dose / Systemic Toxicity — 90-day repeated dose</option><option value="3">Skin &amp; Eye Irritation — Draize eye test alternative</option><option value="4">Genotoxicity — In vivo comet assay</option><option value="5">Reproductive &amp; Developmental Toxicity — OECD 414 rat teratogenicity study</option><option value="6">Reproductive &amp; Developmental Toxicity — Two-generation rodent study</option><option value="7">Carcinogenicity / Longer-term — Tumor induction chronic exposure</option></select>
+    </div>
+
+    <button type="button" onclick="sendPrompt()">Send</button>
+
+    <div id="statusBar" class="status-bar" role="status" aria-live="polite" aria-atomic="true" hidden=""></div>
+
+    <div class="response response--md" id="response"><h1>🔬 Protocol Assessment Report: <em>T. parthenium</em> Essential Oil</h1>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Field</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Date</strong></td>
+<td style="text-align: left;">2026-03-29</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Input Study</strong></td>
+<td style="text-align: left;">Bulgarian Plant Extract Toxicology (Wistar Rat)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Analysis Type</strong></td>
+<td style="text-align: left;">3Rs Alternative Method Mapping</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2>Section 3.5.1: Acute Toxicity (LD50)</h2>
+<h3>Extracted parameters</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Category</strong></td>
+<td style="text-align: left;">Acute Tox</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Species</strong></td>
+<td style="text-align: left;">Rat</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Strain</strong></td>
+<td style="text-align: left;">Wistar</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Sex</strong></td>
+<td style="text-align: left;">male</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Animals (n)</strong></td>
+<td style="text-align: left;">60</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Route</strong></td>
+<td style="text-align: left;">p.o. / i.p.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Duration</strong></td>
+<td style="text-align: left;">up to 24 h observation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Organs / tissues</strong></td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Endpoints</strong></td>
+<td style="text-align: left;">LD50, mortality, clinical signs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Regulatory reference</strong></td>
+<td style="text-align: left;">Yes</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Test article</strong></td>
+<td style="text-align: left;">T. parthenium essential oil</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Procedure</strong></td>
+<td style="text-align: left;">Single-dose acute toxicity; Litchfield–Wilcoxon LD50</td>
+</tr>
+</tbody>
+</table>
+<h3>Recommended Alternatives</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method Name</th>
+<th style="text-align: left;">Validation Status</th>
+<th style="text-align: left;">Species Replaced</th>
+<th style="text-align: left;">Endpoint Type</th>
+<th style="text-align: left;">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>3T3 Neutral Red Uptake (NRU)</strong></td>
+<td style="text-align: left;"><strong>Validated (OECD TG 129)</strong></td>
+<td style="text-align: left;">Wistar Rat / Mouse</td>
+<td style="text-align: left;">Basal Cytotoxicity / LD50 Prediction</td>
+<td style="text-align: left;"><a href="https://joint-research-centre.ec.europa.eu/projects-and-activities/reference-and-measurement/european-union-reference-laboratories/eu-reference-laboratory-alternatives-animal-testing-eurl-ecvam/alternative-methods-toxicity-testing/validated-test-methods-health-effects/acute-toxicity/acute-oral_en">EURL ECVAM</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>T.E.S.T. (QSAR Model)</strong></td>
+<td style="text-align: left;"><strong>Regulatory Accepted</strong></td>
+<td style="text-align: left;"><em>In Silico</em> (No Animals)</td>
+<td style="text-align: left;">LD50 / GHS Hazard Category</td>
+<td style="text-align: left;"><a href="https://www.epa.gov/chemical-research/toxicity-estimation-software-tool-test">EPA Resource</a></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Tool Insight:</strong> Since your sample is an <strong>Essential Oil</strong>, the NRU assay is highly recommended as a range-finder. It can reduce animal use by up to 40% by accurately predicting the starting dose, even if a full replacement is not yet accepted for complex botanicals.</p>
+</blockquote>
+<hr>
+<h2>Section 3.5.2: Repeated Dose Toxicity (28-Day)</h2>
+<h3>Extracted parameters</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Category</strong></td>
+<td style="text-align: left;">Repeated Dose</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Species</strong></td>
+<td style="text-align: left;">Rat</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Strain</strong></td>
+<td style="text-align: left;">Wistar</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Sex</strong></td>
+<td style="text-align: left;">male</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Animals (n)</strong></td>
+<td style="text-align: left;">20</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Route</strong></td>
+<td style="text-align: left;">p.o. (gavage)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Duration</strong></td>
+<td style="text-align: left;">28 days + sampling</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Organs / tissues</strong></td>
+<td style="text-align: left;">blood (serum)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Endpoints</strong></td>
+<td style="text-align: left;">body weight, hematology, serum biochemistry</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Regulatory reference</strong></td>
+<td style="text-align: left;">No</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Test article</strong></td>
+<td style="text-align: left;">T. parthenium EO in vehicle</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Procedure</strong></td>
+<td style="text-align: left;">28-day repeated oral toxicity</td>
+</tr>
+</tbody>
+</table>
+<h3>Recommended Alternatives</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method Name</th>
+<th style="text-align: left;">Validation Status</th>
+<th style="text-align: left;">Species Replaced</th>
+<th style="text-align: left;">Endpoint Type</th>
+<th style="text-align: left;">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>HepaRG™ System</strong></td>
+<td style="text-align: left;"><strong>Scientific Validation</strong></td>
+<td style="text-align: left;">Rat (Liver toxicity)</td>
+<td style="text-align: left;">Hepatotoxicity / ALT &amp; AST Markers</td>
+<td style="text-align: left;"><a href="https://purl.jrc.ec.europa.eu/dataset/db-alm/method/158">DB-ALM-158</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>OECD IATA Framework</strong></td>
+<td style="text-align: left;"><strong>Standard Guidance</strong></td>
+<td style="text-align: left;">Rodent (Systemic)</td>
+<td style="text-align: left;">Multi-endpoint Weight of Evidence</td>
+<td style="text-align: left;"><a href="https://www.oecd.org/en/topics/sub-issues/assessment-of-chemicals/integrated-approaches-to-testing-and-assessment.html">OECD IATA Case Studies</a></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Tool Insight:</strong> Systemic repeated dose toxicity is complex. Instead of a single “test tube” replacement, use an <strong>Integrated Approach to Testing and Assessment (IATA)</strong>. This combines the HepaRG cell model (for your liver markers) with <em>in silico</em> predictions to justify reducing the 28-day study to a 7-day “dose range finder.”</p>
+</blockquote>
+<hr>
+<h2>Section 3.5.3: Histological Evaluation</h2>
+<h3>Extracted parameters</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Category</strong></td>
+<td style="text-align: left;">Other (histology)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Species</strong></td>
+<td style="text-align: left;">Rat</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Strain</strong></td>
+<td style="text-align: left;">Wistar</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Sex</strong></td>
+<td style="text-align: left;">not stated</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Animals (n)</strong></td>
+<td style="text-align: left;">subset</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Route</strong></td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Duration</strong></td>
+<td style="text-align: left;">day 29</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Organs / tissues</strong></td>
+<td style="text-align: left;">brain, heart, stomach, liver, spleen, kidney</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Endpoints</strong></td>
+<td style="text-align: left;">H&amp;E histopathology</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Regulatory reference</strong></td>
+<td style="text-align: left;">No</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Test article</strong></td>
+<td style="text-align: left;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Procedure</strong></td>
+<td style="text-align: left;">Post-mortem organs for histology</td>
+</tr>
+</tbody>
+</table>
+<h3>Recommended Alternatives</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Method Name</th>
+<th style="text-align: left;">Validation Status</th>
+<th style="text-align: left;">Species Replaced</th>
+<th style="text-align: left;">Endpoint Type</th>
+<th style="text-align: left;">Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Multi-Organ-on-a-Chip (MOC)</strong></td>
+<td style="text-align: left;"><strong>Innovative / R&amp;D</strong></td>
+<td style="text-align: left;">Rodent (Organ crosstalk)</td>
+<td style="text-align: left;">Pathological changes / Tissue architecture</td>
+<td style="text-align: left;"><a href="https://nc3rs.org.uk/3rs-resource-library">NC3Rs Resource Library</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Bhas 42 CTA</strong></td>
+<td style="text-align: left;"><strong>Validated (OECD GD 231)</strong></td>
+<td style="text-align: left;">Rodent (Systemic)</td>
+<td style="text-align: left;">Cell Transformation / Morphological Change</td>
+<td style="text-align: left;"><a href="https://pubmed.ncbi.nlm.nih.gov/25803194/">DB-ALM-130</a></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>💡 Tool Insight:</strong> For structural changes, look into <strong>Virtual Second Species</strong> computational models (NC3Rs). These can simulate organ-level damage based on chemical structure, potentially replacing the need for sectioning and staining animal tissues.</p>
+</blockquote>
+<hr>
+<h2>Summary Recommendation</h2>
+<p>For this protocol, a <strong>hybrid approach</strong> is suggested. Move the Acute Toxicity (3.5.1) to an <em>in vitro</em> NRU range-finder to minimize rat usage, and utilize the HepaRG cell line to supplement the 28-day serum biochemistry data (3.5.2).</p></div>
+</div>
+
+<script>
+    (function initSampleMethods() {
+        const select = document.getElementById("sampleSelect");
+        const block = document.getElementById("sampleMethodsBlock");
+        const promptEl = document.getElementById("prompt");
+        if (!select || !promptEl) return;
+
+        let samplesCache = null;
+
+        async function loadSamples() {
+            if (samplesCache) return samplesCache;
+            try {
+                const res = await fetch("/api/sample-inputs");
+                if (!res.ok) return [];
+                const data = await res.json();
+                samplesCache = Array.isArray(data) ? data : [];
+            } catch (_) {
+                samplesCache = [];
+            }
+            return samplesCache;
+        }
+
+        async function populateSelect() {
+            const samples = await loadSamples();
+            if (block) {
+                if (samples.length) {
+                    block.removeAttribute("hidden");
+                } else {
+                    block.setAttribute("hidden", "");
+                }
+            }
+            for (let i = 0; i < samples.length; i++) {
+                const s = samples[i];
+                if (!s || s.id == null) continue;
+                const opt = document.createElement("option");
+                opt.value = String(s.id);
+                opt.textContent = (s.category || "—") + " — " + (s.endpoint || "—");
+                select.appendChild(opt);
+            }
+        }
+
+        select.addEventListener("change", async function () {
+            const id = select.value;
+            if (!id) return;
+            const samples = await loadSamples();
+            const row = samples.find(function (s) {
+                return s && String(s.id) === id;
+            });
+            const text = row && (row.full_methods_text || row.original_methods_text);
+            if (text) {
+                promptEl.value = text;
+            }
+        });
+
+        populateSelect();
+    })();
+
+    function selectedModelKey() {
+        const el = document.querySelector('input[name="runMode"]:checked');
+        return el ? el.value : "test";
+    }
+
+    function setStatusBar(mode, text) {
+        const bar = document.getElementById("statusBar");
+        if (!bar) return;
+        bar.textContent = text || "";
+        bar.className = "status-bar" + (mode ? " status-bar--" + mode : "");
+        if (text || mode === "loading") {
+            bar.removeAttribute("hidden");
+        } else {
+            bar.setAttribute("hidden", "");
+        }
+    }
+
+    function responseHasVisibleContent(el) {
+        if (!el) return false;
+        if (el.classList.contains("response--md")) {
+            return el.innerHTML.trim().length > 0;
+        }
+        return (el.textContent || "").trim().length > 0;
+    }
+
+    async function sendPrompt() {
+        const prompt = document.getElementById("prompt").value;
+        const responseDiv = document.getElementById("response");
+
+        responseDiv.innerHTML = "";
+        responseDiv.textContent = "";
+        responseDiv.className = "response response--plain";
+        responseDiv.setAttribute("hidden", "");
+        setStatusBar("loading", "Loading…");
+
+        try {
+            const res = await fetch("/openrouter", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    prompt,
+                    model: selectedModelKey(),
+                    enrich_matches: true
+                })
+            });
+
+            const ct = (res.headers.get("content-type") || "").toLowerCase();
+            const body = await res.text();
+
+            if (!res.ok) {
+                let detail = body.trim();
+                if (ct.includes("application/json")) {
+                    try {
+                        const j = JSON.parse(body);
+                        if (j && typeof j.error === "string") detail = j.error;
+                        else if (j && j.error != null) detail = JSON.stringify(j.error, null, 2);
+                    } catch (_) { /* keep raw body */ }
+                }
+                const msg = detail
+                    ? `Error (${res.status}): ${detail}`
+                    : `Error (${res.status})`;
+                throw new Error(msg);
+            }
+
+            if (ct.includes("application/json")) {
+                try {
+                    const j = JSON.parse(body);
+                    if (j && typeof j.report_html === "string" && j.report_html.length) {
+                        responseDiv.className = "response response--md";
+                        responseDiv.innerHTML = j.report_html;
+                    } else {
+                        responseDiv.className = "response response--plain";
+                        responseDiv.textContent = JSON.stringify(j, null, 2);
+                    }
+                } catch (_) {
+                    responseDiv.className = "response response--plain";
+                    responseDiv.textContent = body;
+                }
+            } else if (ct.includes("text/html")) {
+                responseDiv.className = "response response--md";
+                responseDiv.innerHTML = body;
+            } else {
+                responseDiv.className = "response response--plain";
+                responseDiv.textContent = body;
+            }
+
+            if (responseHasVisibleContent(responseDiv)) {
+                responseDiv.removeAttribute("hidden");
+            } else {
+                responseDiv.setAttribute("hidden", "");
+            }
+        } catch (err) {
+            responseDiv.innerHTML = "";
+            responseDiv.textContent = "";
+            responseDiv.className = "response response--plain";
+            responseDiv.setAttribute("hidden", "");
+            const msg = err instanceof Error ? err.message : String(err);
+            setStatusBar("error", msg);
+            return;
+        }
+
+        setStatusBar("", "");
+    }
+</script>
+
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true" style="visibility: visible !important;"><template shadowrootmode="open"><style>
+      div.grammarly-desktop-integration {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select:none;
+        user-select:none;
+      }
+
+      div.grammarly-desktop-integration:before {
+        content: attr(data-content);
+      }
+    </style><div aria-label="grammarly-integration" role="group" class="grammarly-desktop-integration" data-content="{&quot;mode&quot;:&quot;full&quot;,&quot;isActive&quot;:true,&quot;isUserDisabled&quot;:false}"></div></template></grammarly-desktop-integration></html>

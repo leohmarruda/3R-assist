@@ -38,7 +38,23 @@
 
 1 elaboration (no ADR): S3 horizontal filter bar vs S4 sidebar distinction — spec was silent, not contradicted.
 
-**Open question before M3:** visual tone (warm off-white vs. plain white) — show `pass-b-visual.html` to 2–3 researchers/CEUAs in Karynn's network before implementing.
+**Open question before M3:** visual tone (warm off-white vs. plain white) — show Ethos templates (`entrada_de_protocolo`, `relat_rio_de_an_lise`) to 2–3 researchers/CEUAs in Karynn's network before implementing.
+
+## M2.5 — Ethos theme adoption
+
+- **Decision:** Ethos Research System adopted as canonical visual base (replaces Pass B `pass-b-visual.html` for implementation).
+- **Token sync:** `docs/design-tokens.md` reconciled with `UI design templates/Ethos Theme/ethos_research_system/DESIGN.md`. Implementation artifacts: `design/tokens.css`, `design/ethos-theme.css` (Tailwind v4), `design/tailwind.preset.js` (reference).
+- **Component inventory:** `design/components.md` — 4 Ethos templates mapped to S1–S6 with P0–P4 priority.
+- **Frontend scaffold:** `frontend/` — Vite + React + Tailwind v4, Ethos tokens wired, preview components (`TopNav`, `ResultCard`).
+
+**Token deltas from Pass B:** `--bg` `#F7F6F2` → `#faf9f5`; `--text-2` `#6B6960` → `#494740` (Ethos `on-surface-variant`). Legacy aliases preserved in `design/tokens.css`.
+
+## M3 — Backend scaffold
+
+- `backend/` FastAPI app scaffolded per spec 2.8 (layered: routes → services → adapters/repositories).
+- Working endpoints: `GET /health`, `POST /analyze` (stub LLM when `ANTHROPIC_API_KEY` unset).
+- SQLite schema in `app/db/schema.sql`; auto-init on startup.
+- Smoke test: `backend/scripts/smoke_test.py`. Unit tests: `backend/tests/`.
 
 ---
 

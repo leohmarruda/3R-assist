@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "../../design/tokens.css";
+@import "../../design/ethos-theme.css";
+
+@layer base {
+  html {
+    @apply font-body-base text-body-base text-on-background antialiased;
+  }
+
+  body {
+    @apply m-0 min-h-screen bg-background;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}

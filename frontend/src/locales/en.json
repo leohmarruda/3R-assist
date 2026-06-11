@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "analyze": "Analyze",
+    "search": "Search",
+    "signIn": "Sign in"
+  },
+  "s1": {
+    "title": "Describe your experimental protocol",
+    "subtitle": "In Portuguese or English.",
+    "pasteLabel": "Paste protocol text",
+    "placeholder": "We used Wistar rats to assess acute oral toxicity…",
+    "submit": "Analyze protocol",
+    "submitting": "Analyzing…",
+    "searchLink": "Already know what you're looking for?",
+    "searchLinkAction": "Direct search",
+    "anonymous": "Continue without an account (anonymous) — history available after registration",
+    "tooShort": "Minimum {{min}} characters",
+    "charCount": "{{count}} / {{max}}"
+  },
+  "s2": {
+    "title": "Extracted parameters",
+    "subtitle": "Confirm or correct before searching.",
+    "backToEdit": "Edit protocol",
+    "backToParams": "Back to parameters",
+    "searchCta": "Search alternatives",
+    "incompleteWarning": "Incomplete fields may reduce search precision.",
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "fields": {
+      "biologicalModel": "Biological model",
+      "objective": "Objective",
+      "procedure": "Procedure",
+      "endpoint": "Endpoint",
+      "applicationArea": "Application area"
+    }
+  },
+  "s3": {
+    "placeholderTitle": "Results",
+    "placeholderBody": "Alternative search (POST /search) will be wired in the next step. Confirmed parameters are ready."
+  },
+  "s4": {
+    "placeholderTitle": "Direct search",
+    "placeholderBody": "Structured filters without protocol analysis — in development."
+  }
+}

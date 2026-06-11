@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Analysis Report | 3R Assist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&amp;family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#878385",
+                        "on-primary-container": "#86837f",
+                        "info-bg": "#E6F1FB",
+                        "tertiary": "#000000",
+                        "tertiary-container": "#1d1b1d",
+                        "on-secondary-fixed-variant": "#48473f",
+                        "on-primary": "#ffffff",
+                        "reduction-text": "#633806",
+                        "error": "#ba1a1a",
+                        "replacement-bg": "#EAF3DE",
+                        "tertiary-fixed-dim": "#cac5c8",
+                        "reduction-bg": "#FAEEDA",
+                        "on-error-container": "#93000a",
+                        "background": "#faf9f5",
+                        "surface-container-low": "#f5f4f0",
+                        "border-subtle": "#E4E2DB",
+                        "surface-container-lowest": "#ffffff",
+                        "reduction-border": "#BA7517",
+                        "surface-container": "#efeeea",
+                        "surface": "#faf9f5",
+                        "on-tertiary": "#ffffff",
+                        "refinement-text": "#085041",
+                        "on-background": "#1b1c1a",
+                        "on-error": "#ffffff",
+                        "info-border": "#378ADD",
+                        "on-primary-fixed": "#1d1b18",
+                        "outline": "#7a776f",
+                        "on-tertiary-fixed-variant": "#494648",
+                        "primary-fixed-dim": "#cac6c1",
+                        "surface-bright": "#faf9f5",
+                        "primary": "#000000",
+                        "inverse-on-surface": "#f2f1ed",
+                        "surface-container-highest": "#e3e2df",
+                        "primary-container": "#1d1b18",
+                        "inverse-surface": "#30312e",
+                        "on-surface-variant": "#494740",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#dbdad6",
+                        "inverse-primary": "#cac6c1",
+                        "surface-tint": "#605e5a",
+                        "secondary": "#605e56",
+                        "on-secondary-fixed": "#1d1c15",
+                        "border-emphasis": "#CBC9C1",
+                        "info-text": "#0C447C",
+                        "primary-fixed": "#e6e2dc",
+                        "on-primary-fixed-variant": "#484743",
+                        "outline-variant": "#cbc6bd",
+                        "surface-container-high": "#e9e8e4",
+                        "refinement-bg": "#E1F5EE",
+                        "on-surface": "#1b1c1a",
+                        "on-secondary-container": "#65635a",
+                        "secondary-container": "#e3dfd4",
+                        "surface-variant": "#e3e2df",
+                        "replacement-border": "#639922",
+                        "replacement-text": "#27500A",
+                        "secondary-fixed-dim": "#cac6bc",
+                        "secondary-fixed": "#e6e2d7",
+                        "on-secondary": "#ffffff",
+                        "text-tertiary": "#A09E96",
+                        "refinement-border": "#1D9E75",
+                        "tertiary-fixed": "#e7e1e3",
+                        "on-tertiary-fixed": "#1d1b1d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "48px",
+                        "element-gap": "12px",
+                        "gutter": "16px",
+                        "container-padding": "24px",
+                        "card-gap": "16px",
+                        "margin-label": "14px",
+                        "fine-gap": "8px"
+                    },
+                    "fontFamily": {
+                        "body-base": ["DM Sans"],
+                        "nav-logo": ["DM Sans"],
+                        "headline-lg": ["DM Sans"],
+                        "metadata": ["DM Sans"],
+                        "label-caps": ["DM Sans"],
+                        "monospace-data": ["DM Mono"],
+                        "card-title": ["DM Sans"],
+                        "badge-button": ["DM Sans"],
+                        "nav-link": ["DM Sans"],
+                        "small-label": ["DM Sans"]
+                    },
+                    "fontSize": {
+                        "body-base": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "nav-logo": ["14px", {"letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "headline-lg": ["17px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "metadata": ["12px", {"lineHeight": "normal", "fontWeight": "400"}],
+                        "label-caps": ["13px", {"letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "monospace-data": ["12px", {"lineHeight": "normal", "fontWeight": "400"}],
+                        "card-title": ["13px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "badge-button": ["12px", {"lineHeight": "normal", "fontWeight": "500"}],
+                        "nav-link": ["13px", {"lineHeight": "normal", "fontWeight": "400"}],
+                        "small-label": ["11px", {"letterSpacing": "0.06em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F7F6F2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-size: 18px;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #E4E2DB;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="font-body-base text-on-background min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="w-full sticky top-0 z-50 bg-background border-b border-border-subtle">
+<div class="flex justify-between items-center h-16 px-container-padding max-w-7xl mx-auto">
+<div class="font-nav-logo text-nav-logo text-primary uppercase tracking-wider">3R Assist</div>
+<div class="hidden md:flex gap-element-gap items-center">
+<a class="font-nav-link text-nav-link text-on-surface-variant hover:text-primary transition-colors" href="#">Platform</a>
+<a class="font-nav-link text-nav-link text-on-surface-variant hover:text-primary transition-colors" href="#">Methodology</a>
+<a class="font-nav-link text-nav-link text-on-surface-variant hover:text-primary transition-colors" href="#">Jurisdictions</a>
+<a class="font-nav-link text-nav-link text-on-surface-variant hover:text-primary transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex gap-fine-gap">
+<button class="px-4 py-2 border border-border-emphasis text-on-surface font-nav-link text-nav-link rounded hover:bg-surface-container transition-colors">Sign In</button>
+<button class="px-4 py-2 bg-primary text-on-primary font-nav-link text-nav-link rounded hover:opacity-90 transition-opacity">Get Started</button>
+</div>
+</div>
+</nav>
+<main class="flex-grow max-w-7xl mx-auto w-full px-container-padding py-8">
+<!-- Header Section -->
+<header class="mb-section-gap">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-gutter">
+<div>
+<nav class="flex items-center gap-fine-gap text-on-surface-variant opacity-65 mb-2 font-metadata text-metadata">
+<span>History</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-background opacity-100 font-medium">Analysis</span>
+</nav>
+<div class="flex items-center gap-element-gap">
+<h1 class="font-headline-lg text-headline-lg text-primary">Report <span class="font-monospace-data text-monospace-data">PT-2024-008</span></h1>
+<span class="px-2 py-0.5 bg-refinement-bg text-refinement-text border border-refinement-border rounded font-badge-button text-badge-button flex items-center gap-1">
+<span class="status-dot bg-refinement-border"></span> Analysis Complete
+                        </span>
+</div>
+</div>
+<div class="flex gap-fine-gap">
+<button class="flex items-center gap-fine-gap px-3 py-2 border border-border-emphasis bg-surface-container-lowest font-nav-link text-nav-link rounded hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">share</span> Share
+                    </button>
+<button class="flex items-center gap-fine-gap px-3 py-2 bg-primary text-on-primary font-nav-link text-nav-link rounded hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">download</span> Export PDF
+                    </button>
+</div>
+</div>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-card-gap">
+<!-- Left Column (Main Data) -->
+<div class="lg:col-span-8 space-y-card-gap">
+<!-- Protocol Summary Card -->
+<section class="p-container-padding bg-surface-container-lowest border border-border-subtle rounded-lg">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase mb-4">Protocol Summary</h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="space-y-1">
+<label class="font-small-label text-small-label text-on-surface-variant opacity-65 uppercase">Analysis Date</label>
+<p class="font-body-base text-body-base">Oct 24, 2023</p>
+</div>
+<div class="space-y-1">
+<label class="font-small-label text-small-label text-on-surface-variant opacity-65 uppercase">Study Type</label>
+<p class="font-body-base text-body-base">Acute Toxicity (GHS Category 3)</p>
+</div>
+<div class="space-y-1">
+<label class="font-small-label text-small-label text-on-surface-variant opacity-65 uppercase">Target Species</label>
+<p class="font-body-base text-body-base">Wistar Rat (Rattus norvegicus)</p>
+</div>
+</div>
+</section>
+<!-- Extracted Parameters Table -->
+<section class="bg-surface-container-lowest border border-border-subtle rounded-lg overflow-hidden">
+<div class="px-container-padding py-4 border-b border-border-subtle">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase">Extracted Parameters</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container font-small-label text-small-label text-on-surface-variant uppercase">
+<th class="px-container-padding py-3 font-medium">Parameter</th>
+<th class="px-gutter py-3 font-medium">Detected Value</th>
+<th class="px-container-padding py-3 font-medium text-right">Confidence Score</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-base text-body-base">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-container-padding py-3 text-on-surface-variant">Administration Route</td>
+<td class="px-gutter py-3">Oral Gavage</td>
+<td class="px-container-padding py-3 text-right font-monospace-data">98.4%</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-container-padding py-3 text-on-surface-variant">Observation Duration</td>
+<td class="px-gutter py-3">14 Days</td>
+<td class="px-container-padding py-3 text-right font-monospace-data">95.2%</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-container-padding py-3 text-on-surface-variant">Sample Size (n)</td>
+<td class="px-gutter py-3">10 per Group</td>
+<td class="px-container-padding py-3 text-right font-monospace-data">99.1%</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-container-padding py-3 text-on-surface-variant">Dosage Levels</td>
+<td class="px-gutter py-3">5, 50, 300 mg/kg</td>
+<td class="px-container-padding py-3 text-right font-monospace-data">88.7%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Tool Insight Callout -->
+<section class="p-gutter bg-info-bg border border-info-border rounded flex gap-gutter">
+<span class="material-symbols-outlined text-info-text">lightbulb</span>
+<div class="space-y-1">
+<h3 class="font-card-title text-card-title text-info-text">Automated Insight</h3>
+<p class="font-body-base text-body-base text-info-text opacity-90">
+                            The current protocol utilizes a lethal dose endpoint which triggers a mandatory check for <strong class="font-medium underline decoration-1">OECD Test Guideline 423</strong> (Acute Toxic Class Method). Replacing the standard LD50 study could reduce animal usage by up to 70%.
+                        </p>
+</div>
+</section>
+</div>
+<!-- Right Column (3R Recommendations Grid) -->
+<div class="lg:col-span-4 space-y-card-gap">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant uppercase px-1">Recommended Alternatives</h2>
+<!-- Replacement Card -->
+<div class="p-container-padding bg-surface-container-lowest border border-border-subtle rounded-lg hover:border-border-emphasis transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<span class="px-2 py-0.5 bg-replacement-bg text-replacement-text border border-replacement-border rounded font-badge-button text-badge-button uppercase tracking-tight">Replacement</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-25 group-hover:opacity-100 transition-opacity">open_in_new</span>
+</div>
+<h3 class="font-card-title text-card-title mb-2">In Vitro Reconstructed Human Epidermis (RhE)</h3>
+<div class="space-y-3 font-metadata text-metadata">
+<div class="flex justify-between border-b border-border-subtle pb-1">
+<span class="text-on-surface-variant opacity-65">Validation Status</span>
+<span class="font-medium text-replacement-text">Validated (OECD 431)</span>
+</div>
+<div class="flex justify-between border-b border-border-subtle pb-1">
+<span class="text-on-surface-variant opacity-65">Species Replaced</span>
+<span class="font-medium">Oryctolagus cuniculus</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-on-surface-variant opacity-65">Source Links</span>
+<div class="flex gap-fine-gap flex-wrap">
+<span class="bg-surface-container px-1.5 py-0.5 rounded border border-border-subtle">EURL ECVAM</span>
+<span class="bg-surface-container px-1.5 py-0.5 rounded border border-border-subtle">OECD Library</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Reduction Card -->
+<div class="p-container-padding bg-surface-container-lowest border border-border-subtle rounded-lg hover:border-border-emphasis transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<span class="px-2 py-0.5 bg-reduction-bg text-reduction-text border border-reduction-border rounded font-badge-button text-badge-button uppercase tracking-tight">Reduction</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-25 group-hover:opacity-100 transition-opacity">open_in_new</span>
+</div>
+<h3 class="font-card-title text-card-title mb-2">Sequential Statistical Design (Bayesian)</h3>
+<div class="space-y-3 font-metadata text-metadata">
+<div class="flex justify-between border-b border-border-subtle pb-1">
+<span class="text-on-surface-variant opacity-65">Validation Status</span>
+<span class="font-medium text-reduction-text">Peer Reviewed</span>
+</div>
+<div class="flex justify-between border-b border-border-subtle pb-1">
+<span class="text-on-surface-variant opacity-65">Savings Projection</span>
+<span class="font-medium">-12 Subjects</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-on-surface-variant opacity-65">Source Links</span>
+<div class="flex gap-fine-gap flex-wrap">
+<span class="bg-surface-container px-1.5 py-0.5 rounded border border-border-subtle">NC3Rs</span>
+<span class="bg-surface-container px-1.5 py-0.5 rounded border border-border-subtle">PubMed Central</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Refinement Card -->
+<div class="p-container-padding bg-surface-container-lowest border border-border-subtle rounded-lg hover:border-border-emphasis transition-colors group">
+<div class="flex justify-between items-start mb-4">
+<span class="px-2 py-0.5 bg-refinement-bg text-refinement-text border border-refinement-border rounded font-badge-button text-badge-button uppercase tracking-tight">Refinement</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-25 group-hover:opacity-100 transition-opacity">open_in_new</span>
+</div>
+<h3 class="font-card-title text-card-title mb-2">Non-Invasive Telemetric Monitoring</h3>
+<div class="space-y-3 font-metadata text-metadata">
+<div class="flex justify-between border-b border-border-subtle pb-1">
+<span class="text-on-surface-variant opacity-65">Validation Status</span>
+<span class="font-medium text-refinement-text">Best Practice</span>
+</div>
+<div class="flex justify-between border-b border-border-subtle pb-1">
+<span class="text-on-surface-variant opacity-65">Welfare Impact</span>
+<span class="font-medium">Reduced Stress Marks</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-on-surface-variant opacity-65">Source Links</span>
+<div class="flex gap-fine-gap flex-wrap">
+<span class="bg-surface-container px-1.5 py-0.5 rounded border border-border-subtle">FRAME UK</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Action Bar -->
+<div class="mt-section-gap pt-gutter border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-gutter">
+<div class="font-metadata text-metadata text-on-surface-variant opacity-65 flex items-center gap-fine-gap">
+<span class="material-symbols-outlined">verified</span> Precision-verified by 3R Assist Core Engine v4.2
+            </div>
+<div class="flex gap-fine-gap w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-6 py-2.5 border border-border-emphasis bg-surface-container-lowest font-nav-link text-nav-link rounded hover:bg-surface-container transition-colors">
+                    Print Detailed Log
+                </button>
+<button class="flex-1 sm:flex-none px-6 py-2.5 bg-primary text-on-primary font-nav-link text-nav-link rounded hover:opacity-90 transition-opacity">
+                    Apply Recommendations
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-section-gap border-t border-border-subtle bg-surface-container-lowest">
+<div class="py-12 px-container-padding max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-fine-gap">
+<div class="font-nav-logo text-nav-logo text-primary">3R Assist</div>
+<div class="font-body-base text-body-base text-on-surface-variant opacity-65 text-center md:text-left">
+                © 2024 3R Assist. Precision Ethics in Scientific Research.
+            </div>
+<div class="flex gap-gutter">
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 transition-opacity" href="#">Ethical Framework</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for table rows or cards
+        document.querySelectorAll('tr, .p-container-padding').forEach(el => {
+            el.addEventListener('mousedown', function() {
+                this.style.transform = 'scale(0.998)';
+                this.style.transition = 'transform 0.05s ease';
+            });
+            el.addEventListener('mouseup', function() {
+                this.style.transform = 'scale(1)';
+            });
+            el.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
+        }
+        body {
+            background-color: #faf9f5;
+            color: #1b1c1a;
+            -webkit-font-smoothing: antialiased;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f5f4f0;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbc6bd;
+            border-radius: 2px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "reduction-border": "#BA7517",
+                        "border-emphasis": "#CBC9C1",
+                        "on-secondary-container": "#65635a",
+                        "text-tertiary": "#A09E96",
+                        "refinement-text": "#085041",
+                        "primary-fixed": "#e6e2dc",
+                        "replacement-border": "#639922",
+                        "replacement-bg": "#EAF3DE",
+                        "primary-fixed-dim": "#cac6c1",
+                        "surface-container-high": "#e9e8e4",
+                        "background": "#faf9f5",
+                        "on-error-container": "#93000a",
+                        "info-text": "#0C447C",
+                        "inverse-on-surface": "#f2f1ed",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#cac6bc",
+                        "on-primary-fixed-variant": "#484743",
+                        "tertiary": "#000000",
+                        "surface-tint": "#605e5a",
+                        "on-secondary-fixed-variant": "#48473f",
+                        "on-tertiary-fixed-variant": "#494648",
+                        "refinement-bg": "#E1F5EE",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e3e2df",
+                        "on-primary-container": "#86837f",
+                        "inverse-primary": "#cac6c1",
+                        "outline-variant": "#cbc6bd",
+                        "info-bg": "#E6F1FB",
+                        "on-surface": "#1b1c1a",
+                        "tertiary-container": "#1d1b1d",
+                        "tertiary-fixed": "#e7e1e3",
+                        "replacement-text": "#27500A",
+                        "border-subtle": "#E4E2DB",
+                        "outline": "#7a776f",
+                        "primary": "#000000",
+                        "inverse-surface": "#30312e",
+                        "surface-dim": "#dbdad6",
+                        "secondary": "#605e56",
+                        "surface-bright": "#faf9f5",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e3e2df",
+                        "secondary-container": "#e3dfd4",
+                        "surface-container-low": "#f5f4f0",
+                        "on-secondary-fixed": "#1d1c15",
+                        "on-tertiary-fixed": "#1d1b1d",
+                        "info-border": "#378ADD",
+                        "on-primary-fixed": "#1d1b18",
+                        "primary-container": "#1d1b18",
+                        "on-secondary": "#ffffff",
+                        "reduction-bg": "#FAEEDA",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#faf9f5",
+                        "reduction-text": "#633806",
+                        "surface-container": "#efeeea",
+                        "refinement-border": "#1D9E75",
+                        "on-background": "#1b1c1a",
+                        "secondary-fixed": "#e6e2d7",
+                        "tertiary-fixed-dim": "#cac5c8",
+                        "on-tertiary-container": "#878385",
+                        "on-surface-variant": "#494740"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "card-gap": "16px",
+                        "element-gap": "12px",
+                        "container-padding": "24px",
+                        "section-gap": "48px",
+                        "fine-gap": "8px",
+                        "gutter": "16px",
+                        "margin-label": "14px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["DM Sans"],
+                        "headline-lg": ["DM Sans"],
+                        "small-label": ["DM Sans"],
+                        "monospace-data": ["DM Mono"],
+                        "nav-logo": ["DM Sans"],
+                        "body-base": ["DM Sans"],
+                        "nav-link": ["DM Sans"],
+                        "badge-button": ["DM Sans"],
+                        "metadata": ["DM Sans"],
+                        "card-title": ["DM Sans"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["13px", {"letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "headline-lg": ["17px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "small-label": ["11px", {"letterSpacing": "0.06em", "fontWeight": "500"}],
+                        "monospace-data": ["12px", {"lineHeight": "normal", "fontWeight": "400"}],
+                        "nav-logo": ["14px", {"letterSpacing": "-0.01em", "fontWeight": "500"}],
+                        "body-base": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "nav-link": ["13px", {"lineHeight": "normal", "fontWeight": "400"}],
+                        "badge-button": ["12px", {"lineHeight": "normal", "fontWeight": "500"}],
+                        "metadata": ["12px", {"lineHeight": "normal", "fontWeight": "400"}],
+                        "card-title": ["13px", {"lineHeight": "1.4", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-base">
+<!-- Top Navigation Bar -->
+<header class="bg-background border-b border-border-subtle fixed top-0 w-full z-50">
+<div class="flex justify-between items-center w-full px-container-padding h-16 max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="font-nav-logo text-nav-logo font-bold text-primary">3R Assist</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-nav-link text-nav-link text-primary border-b-2 border-primary pb-1" href="#">Dashboard</a>
+<a class="font-nav-link text-nav-link text-on-secondary-container hover:text-primary transition-colors duration-150" href="#">Analyze</a>
+<a class="font-nav-link text-nav-link text-on-secondary-container hover:text-primary transition-colors duration-150" href="#">History</a>
+<a class="font-nav-link text-nav-link text-on-secondary-container hover:text-primary transition-colors duration-150" href="#">Favorites</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-secondary-container">search</span>
+<input class="bg-surface-container-lowest border border-border-emphasis text-body-base px-10 py-1.5 rounded-lg focus:outline-none focus:border-primary w-64 transition-all" placeholder="Search resources..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-on-secondary-container hover:text-primary transition-colors">settings</button>
+<button class="material-symbols-outlined text-on-secondary-container hover:text-primary transition-colors">account_circle</button>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-12 px-container-padding max-w-7xl mx-auto">
+<!-- Welcome Header -->
+<div class="mb-section-gap">
+<h1 class="font-headline-lg text-headline-lg text-primary">Welcome back, Dr. Silva</h1>
+<p class="text-on-secondary-container opacity-65 font-body-base">Scientific Review Dashboard • Thursday, 24 Oct 2024</p>
+</div>
+<!-- Summary Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-card-gap mb-section-gap">
+<!-- Active Analyses -->
+<div class="bg-surface-container-lowest border border-border-subtle p-card-gap rounded-lg hover:border-border-emphasis transition-all duration-200">
+<div class="flex justify-between items-start mb-element-gap">
+<span class="font-label-caps text-label-caps text-on-secondary-container">Active Analyses</span>
+<span class="material-symbols-outlined text-on-secondary-container">biotech</span>
+</div>
+<div class="font-monospace-data text-3xl font-bold text-primary mb-1">12</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-info-border text-sm">trending_up</span>
+<span class="font-small-label text-small-label text-info-text">+2 from last week</span>
+</div>
+</div>
+<!-- Alternatives Found -->
+<div class="bg-surface-container-lowest border border-border-subtle p-card-gap rounded-lg hover:border-border-emphasis transition-all duration-200">
+<div class="flex justify-between items-start mb-element-gap">
+<span class="font-label-caps text-label-caps text-on-secondary-container">Alternatives Found</span>
+<span class="material-symbols-outlined text-on-secondary-container">hub</span>
+</div>
+<div class="font-monospace-data text-3xl font-bold text-primary mb-1">47</div>
+<div class="font-small-label text-small-label text-on-secondary-container opacity-65">Awaiting verification</div>
+</div>
+<!-- Database Updates -->
+<div class="bg-surface-container-lowest border border-border-subtle p-card-gap rounded-lg hover:border-border-emphasis transition-all duration-200">
+<div class="flex justify-between items-start mb-element-gap">
+<span class="font-label-caps text-label-caps text-on-secondary-container">Database Updates</span>
+<span class="material-symbols-outlined text-on-secondary-container">update</span>
+</div>
+<div class="font-monospace-data text-3xl font-bold text-primary mb-1">2,410</div>
+<div class="font-small-label text-small-label text-on-secondary-container opacity-65">Last sync: 2h ago</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-section-gap">
+<!-- Protocol Table Section -->
+<div class="lg:col-span-8">
+<div class="flex justify-between items-center mb-card-gap">
+<h2 class="font-headline-lg text-headline-lg text-primary">Recent Protocol Analyses</h2>
+<button class="font-badge-button text-badge-button bg-primary text-on-primary px-4 py-2 rounded transition-opacity active:opacity-80">
+                        New Analysis
+                    </button>
+</div>
+<div class="bg-surface-container-lowest border border-border-subtle rounded-lg overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-card-gap py-3 font-label-caps text-label-caps text-on-secondary-container">Protocol Name</th>
+<th class="px-card-gap py-3 font-label-caps text-label-caps text-on-secondary-container">Date</th>
+<th class="px-card-gap py-3 font-label-caps text-label-caps text-on-secondary-container">Status</th>
+<th class="px-card-gap py-3 font-label-caps text-label-caps text-on-secondary-container">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<!-- Row 1 -->
+<tr class="hover:bg-background transition-colors">
+<td class="px-card-gap py-4">
+<div class="font-card-title text-card-title text-primary">In-Vitro Toxicology Screening</div>
+<div class="font-metadata text-metadata text-on-secondary-container">ID: PRT-2024-001</div>
+</td>
+<td class="px-card-gap py-4 font-monospace-data text-monospace-data text-on-secondary-container">Oct 22, 2024</td>
+<td class="px-card-gap py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-badge-button font-badge-button bg-replacement-bg text-replacement-text border border-replacement-border">
+                                            Replacement Found
+                                        </span>
+</td>
+<td class="px-card-gap py-4">
+<button class="text-on-secondary-container hover:text-primary flex items-center gap-1 font-badge-button">
+<span class="material-symbols-outlined text-base">visibility</span>
+                                            View
+                                        </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-background transition-colors">
+<td class="px-card-gap py-4">
+<div class="font-card-title text-card-title text-primary">Neurological Development Study</div>
+<div class="font-metadata text-metadata text-on-secondary-container">ID: PRT-2024-004</div>
+</td>
+<td class="px-card-gap py-4 font-monospace-data text-monospace-data text-on-secondary-container">Oct 21, 2024</td>
+<td class="px-card-gap py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-badge-button font-badge-button bg-refinement-bg text-refinement-text border border-refinement-border">
+                                            Refined Protocol
+                                        </span>
+</td>
+<td class="px-card-gap py-4">
+<button class="text-on-secondary-container hover:text-primary flex items-center gap-1 font-badge-button">
+<span class="material-symbols-outlined text-base">visibility</span>
+                                            View
+                                        </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-background transition-colors">
+<td class="px-card-gap py-4">
+<div class="font-card-title text-card-title text-primary">Vaccine Potency Efficacy</div>
+<div class="font-metadata text-metadata text-on-secondary-container">ID: PRT-2024-009</div>
+</td>
+<td class="px-card-gap py-4 font-monospace-data text-monospace-data text-on-secondary-container">Oct 19, 2024</td>
+<td class="px-card-gap py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-badge-button font-badge-button bg-reduction-bg text-reduction-text border border-reduction-border">
+                                            Reduction Opportunity
+                                        </span>
+</td>
+<td class="px-card-gap py-4">
+<button class="text-on-secondary-container hover:text-primary flex items-center gap-1 font-badge-button">
+<span class="material-symbols-outlined text-base">visibility</span>
+                                            View
+                                        </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-background transition-colors">
+<td class="px-card-gap py-4">
+<div class="font-card-title text-card-title text-primary">Endocrine Disruption Analysis</div>
+<div class="font-metadata text-metadata text-on-secondary-container">ID: PRT-2024-012</div>
+</td>
+<td class="px-card-gap py-4 font-monospace-data text-monospace-data text-on-secondary-container">Oct 18, 2024</td>
+<td class="px-card-gap py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-badge-button font-badge-button bg-surface-container-high text-on-secondary-container border border-border-emphasis opacity-65">
+                                            Under Review
+                                        </span>
+</td>
+<td class="px-card-gap py-4">
+<button class="text-on-secondary-container hover:text-primary flex items-center gap-1 font-badge-button">
+<span class="material-symbols-outlined text-base">visibility</span>
+                                            View
+                                        </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Recommended Resources Sidebar -->
+<aside class="lg:col-span-4">
+<div class="mb-card-gap">
+<h2 class="font-headline-lg text-headline-lg text-primary">Recommended Resources</h2>
+</div>
+<div class="space-y-card-gap">
+<!-- OECD Resource -->
+<div class="group bg-surface-container-lowest border border-border-subtle p-card-gap rounded-lg hover:border-primary transition-all cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-info-bg rounded flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-info-text">menu_book</span>
+</div>
+<div>
+<h3 class="font-card-title text-card-title text-primary mb-1">OECD Guidelines for In Vitro</h3>
+<p class="font-metadata text-metadata text-on-secondary-container mb-3">Updated technical guidance for endocrine disruption testing (Test No. 455).</p>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-small-label text-[10px] bg-info-bg text-info-text border border-info-border uppercase">OECD</span>
+<span class="font-metadata text-metadata text-on-secondary-container opacity-65">PDF • 2.4 MB</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ECVAM Resource -->
+<div class="group bg-surface-container-lowest border border-border-subtle p-card-gap rounded-lg hover:border-primary transition-all cursor-pointer">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 bg-refinement-bg rounded flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-refinement-text">description</span>
+</div>
+<div>
+<h3 class="font-card-title text-card-title text-primary mb-1">EURL ECVAM Status Report</h3>
+<p class="font-metadata text-metadata text-on-secondary-container mb-3">Development, validation, and regulatory acceptance of 3Rs methods.</p>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-small-label text-[10px] bg-refinement-bg text-refinement-text border border-refinement-border uppercase">ECVAM</span>
+<span class="font-metadata text-metadata text-on-secondary-container opacity-65">External Link</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Visual Asset Placeholder -->
+<div class="rounded-lg overflow-hidden border border-border-subtle h-48 relative group cursor-pointer">
+<img class="w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A clean, professional scientific laboratory setting with high-end microscopy equipment and sterile glass vials. The lighting is bright and modern, creating a trustworthy and academic atmosphere consistent with a research institution. The image maintains a light-mode palette of soft whites and cool grays to align with the minimalist UI design system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuATrQUc_Pv6iKBsI3hQMWExkgGSk3qOga4i12H1aQnexoyBJDbMDKJi3w99UbsMLr4VpVlsUmDfDb6jNg_5vCZu0xDG5FlFhT6DfXAtEHWefntGLQd8xiSvYNgaOxi-N2R6ZVQQVccDFN-BgpJyd4aV7EVv7ppDXkV8HooDR8ZHJIz8JPdYVdq3uN6X6aDAuY_Q733VBjXqrmFd5c8QoFONEG3b3lVgjYQ7ffq1Fc5lZzzGTQnSXMn6XlAL-HTVoctU-824eZBkWwz-"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent flex items-end p-card-gap">
+<span class="text-white font-label-caps text-label-caps">Advanced 3R Methodologies Workshop</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Success Message Snackbar (Micro-interaction example) -->
+<div class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-primary text-on-primary px-6 py-3 rounded-lg flex items-center gap-3 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none" id="toast">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="font-body-base text-sm">Database successfully synchronized</span>
+</div>
+<script>
+        // Micro-interaction for the toast
+        window.onload = () => {
+            setTimeout(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.remove('opacity-0', 'translate-y-4');
+                toast.classList.add('opacity-100', 'translate-y-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-4');
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                }, 4000);
+            }, 1000);
+        };
+
+        // Search Focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('ring-2', 'ring-primary/10');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('ring-2', 'ring-primary/10');
+        });
+    </script>
+</body></html>

@@ -1,0 +1,100 @@
+/**
+ * 3R Assist — Ethos Research System tokens
+ * Canonical source: UI design templates/Ethos Theme/ethos_research_system/DESIGN.md
+ * Consumed by: frontend (Tailwind + global CSS)
+ */
+
+:root {
+  /* Surfaces */
+  --background: #faf9f5;
+  --surface: #faf9f5;
+  --surface-dim: #dbdad6;
+  --surface-bright: #faf9f5;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f5f4f0;
+  --surface-container: #efeeea;
+  --surface-container-high: #e9e8e4;
+  --surface-container-highest: #e3e2df;
+  --surface-variant: #e3e2df;
+
+  /* Text */
+  --on-background: #1b1c1a;
+  --on-surface: #1b1c1a;
+  --on-surface-variant: #494740;
+  --text-tertiary: #a09e96;
+
+  /* Legacy aliases (Pass B) — prefer Ethos names in new code */
+  --bg: var(--background);
+  --surface-elevated: var(--surface-container-lowest);
+  --border: #e4e2db;
+  --border-md: #cbc9c1;
+  --text-1: var(--on-surface);
+  --text-2: var(--on-surface-variant);
+  --text-3: var(--text-tertiary);
+
+  /* Primary / structural */
+  --primary: #000000;
+  --on-primary: #ffffff;
+  --primary-container: #1d1b18;
+  --outline: #7a776f;
+  --outline-variant: #cbc6bd;
+  --border-subtle: var(--border);
+  --border-emphasis: var(--border-md);
+
+  /* 3R semantic */
+  --replacement-bg: #eaf3de;
+  --replacement-text: #27500a;
+  --replacement-border: #639922;
+  --reduction-bg: #faeeda;
+  --reduction-text: #633806;
+  --reduction-border: #ba7517;
+  --refinement-bg: #e1f5ee;
+  --refinement-text: #085041;
+  --refinement-border: #1d9e75;
+
+  /* Jurisdiction / info */
+  --info-bg: #e6f1fb;
+  --info-text: #0c447c;
+  --info-border: #378add;
+  --jurisdiction-intl-only-bg: #f1efe8;
+  --jurisdiction-intl-only-text: #5f5e5a;
+  --jurisdiction-intl-only-border: #b4b2a9;
+
+  /* Error */
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+
+  /* Typography */
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+
+  /* Spacing */
+  --container-padding: 24px;
+  --section-gap: 48px;
+  --card-gap: 16px;
+  --element-gap: 12px;
+  --fine-gap: 8px;
+  --gutter: 16px;
+  --margin-label: 14px;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Motion */
+  --transition-fast: 120ms ease;
+  --transition-base: 150ms ease;
+
+  /* Layout */
+  --nav-height: 64px;
+  --content-max-width: 80rem;
+
+  /* Hierarchy */
+  --opacity-dimmed: 0.65;
+  --score-dim-threshold: 65;
+}

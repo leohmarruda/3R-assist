@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "analyze": "Analisar",
+    "search": "Buscar",
+    "signIn": "Entrar"
+  },
+  "s1": {
+    "title": "Descreva seu protocolo experimental",
+    "subtitle": "Em português ou inglês.",
+    "pasteLabel": "Cole o texto do protocolo",
+    "placeholder": "Utilizamos camundongos Wistar para avaliar a toxicidade aguda por via oral…",
+    "submit": "Analisar protocolo",
+    "submitting": "Analisando…",
+    "searchLink": "Já sabe o que procura?",
+    "searchLinkAction": "Busca direta",
+    "anonymous": "Continuar sem conta (anônimo) — histórico disponível após cadastro",
+    "tooShort": "Mínimo de {{min}} caracteres",
+    "charCount": "{{count}} / {{max}}"
+  },
+  "s2": {
+    "title": "Parâmetros extraídos",
+    "subtitle": "Confirme ou corrija antes de buscar.",
+    "backToEdit": "Editar protocolo",
+    "backToParams": "Voltar aos parâmetros",
+    "searchCta": "Buscar alternativas",
+    "incompleteWarning": "Campos incompletos podem reduzir a precisão da busca.",
+    "confidence": {
+      "high": "Alta confiança",
+      "medium": "Confiança média",
+      "low": "Baixa confiança"
+    },
+    "fields": {
+      "biologicalModel": "Modelo biológico",
+      "objective": "Objetivo",
+      "procedure": "Procedimento",
+      "endpoint": "Endpoint",
+      "applicationArea": "Área de aplicação"
+    }
+  },
+  "s3": {
+    "placeholderTitle": "Resultados",
+    "placeholderBody": "A busca de alternativas (POST /search) será conectada na próxima etapa. Os parâmetros confirmados estão prontos."
+  },
+  "s4": {
+    "placeholderTitle": "Busca direta",
+    "placeholderBody": "Filtros estruturados sem análise de protocolo — em desenvolvimento."
+  }
+}

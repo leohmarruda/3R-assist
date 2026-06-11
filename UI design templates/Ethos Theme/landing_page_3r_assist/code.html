@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>3R Assist | Precision Ethics in Scientific Research</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=DM+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#494740",
+                    "on-tertiary-container": "#878385",
+                    "on-tertiary-fixed": "#1d1b1d",
+                    "border-subtle": "#E4E2DB",
+                    "inverse-primary": "#cac6c1",
+                    "on-tertiary-fixed-variant": "#494648",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#e3dfd4",
+                    "secondary-fixed": "#e6e2d7",
+                    "inverse-on-surface": "#f2f1ed",
+                    "reduction-bg": "#FAEEDA",
+                    "replacement-text": "#27500A",
+                    "surface-container-high": "#e9e8e4",
+                    "on-secondary-container": "#65635a",
+                    "inverse-surface": "#30312e",
+                    "refinement-bg": "#E1F5EE",
+                    "on-background": "#1b1c1a",
+                    "replacement-border": "#639922",
+                    "border-emphasis": "#CBC9C1",
+                    "surface-container": "#efeeea",
+                    "reduction-border": "#BA7517",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#484743",
+                    "surface-bright": "#faf9f5",
+                    "surface-tint": "#605e5a",
+                    "outline": "#7a776f",
+                    "on-error-container": "#93000a",
+                    "primary-fixed": "#e6e2dc",
+                    "info-border": "#378ADD",
+                    "on-primary-container": "#86837f",
+                    "info-bg": "#E6F1FB",
+                    "secondary-fixed-dim": "#cac6bc",
+                    "refinement-text": "#085041",
+                    "info-text": "#0C447C",
+                    "replacement-bg": "#EAF3DE",
+                    "primary": "#000000",
+                    "primary-container": "#1d1b18",
+                    "on-primary-fixed": "#1d1b18",
+                    "on-secondary-fixed-variant": "#48473f",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#dbdad6",
+                    "on-secondary": "#ffffff",
+                    "surface-variant": "#e3e2df",
+                    "refinement-border": "#1D9E75",
+                    "surface-container-low": "#f5f4f0",
+                    "surface-container-highest": "#e3e2df",
+                    "primary-fixed-dim": "#cac6c1",
+                    "secondary": "#605e56",
+                    "tertiary": "#000000",
+                    "on-secondary-fixed": "#1d1c15",
+                    "tertiary-fixed-dim": "#cac5c8",
+                    "outline-variant": "#cbc6bd",
+                    "on-primary": "#ffffff",
+                    "tertiary-container": "#1d1b1d",
+                    "text-tertiary": "#A09E96",
+                    "surface": "#faf9f5",
+                    "reduction-text": "#633806",
+                    "on-surface": "#1b1c1a",
+                    "background": "#faf9f5",
+                    "tertiary-fixed": "#e7e1e3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "element-gap": "12px",
+                    "fine-gap": "8px",
+                    "section-gap": "48px",
+                    "margin-label": "14px",
+                    "container-padding": "24px",
+                    "gutter": "16px",
+                    "card-gap": "16px"
+            },
+            "fontFamily": {
+                    "small-label": ["DM Sans"],
+                    "card-title": ["DM Sans"],
+                    "badge-button": ["DM Sans"],
+                    "nav-logo": ["DM Sans"],
+                    "metadata": ["DM Sans"],
+                    "label-caps": ["DM Sans"],
+                    "monospace-data": ["DM Mono"],
+                    "headline-lg": ["DM Sans"],
+                    "nav-link": ["DM Sans"],
+                    "body-base": ["DM Sans"]
+            },
+            "fontSize": {
+                    "small-label": ["11px", {"letterSpacing": "0.06em", "fontWeight": "500"}],
+                    "card-title": ["13px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "badge-button": ["12px", {"lineHeight": "normal", "fontWeight": "500"}],
+                    "nav-logo": ["14px", {"letterSpacing": "-0.01em", "fontWeight": "500"}],
+                    "metadata": ["12px", {"lineHeight": "normal", "fontWeight": "400"}],
+                    "label-caps": ["13px", {"letterSpacing": "0.04em", "fontWeight": "500"}],
+                    "monospace-data": ["12px", {"lineHeight": "normal", "fontWeight": "400"}],
+                    "headline-lg": ["17px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "nav-link": ["13px", {"lineHeight": "normal", "fontWeight": "400"}],
+                    "body-base": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        body {
+            background-color: #F7F6F2;
+        }
+        .scientific-grid {
+            background-image: radial-gradient(#CBC9C1 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="font-body-base text-on-surface selection:bg-primary selection:text-white">
+<!-- TopNavBar -->
+<nav class="w-full sticky top-0 z-50 bg-background dark:bg-background border-b border-border-subtle dark:border-outline-variant transition-all duration-150 ease-in-out">
+<div class="flex justify-between items-center h-16 px-container-padding max-w-7xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="font-nav-logo text-nav-logo text-primary dark:text-on-background uppercase tracking-wider">3R Assist</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="font-nav-link text-nav-link text-primary dark:text-on-background font-medium border-b-2 border-primary pb-1" href="#">Platform</a>
+<a class="font-nav-link text-nav-link text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Methodology</a>
+<a class="font-nav-link text-nav-link text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Jurisdictions</a>
+<a class="font-nav-link text-nav-link text-on-surface-variant dark:text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Pricing</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="font-nav-link text-nav-link text-on-surface-variant opacity-65 hover:opacity-100 transition-all duration-200">Sign In</button>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-[6px] font-nav-link text-nav-link hover:opacity-90 transition-all">Get Started</button>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<section class="relative pt-24 pb-16 overflow-hidden scientific-grid">
+<div class="max-w-7xl mx-auto px-container-padding text-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-border-emphasis rounded-full mb-8">
+<span class="material-symbols-outlined text-primary" style="font-size: 14px;">science</span>
+<span class="font-small-label text-small-label uppercase tracking-widest text-on-surface-variant">Next-Gen Compliance</span>
+</div>
+<h1 class="font-headline-lg text-4xl md:text-6xl mb-6 max-w-4xl mx-auto tracking-tight leading-tight">
+                Precision Ethics for Scientific Research
+            </h1>
+<p class="font-body-base text-lg text-on-surface-variant opacity-80 max-w-2xl mx-auto mb-10">
+                AI-driven 3R analysis for experimental protocols. Accelerate ethical compliance with validated alternatives sourced from global research databases.
+            </p>
+<div class="flex flex-col sm:flex-row justify-center gap-4">
+<button class="bg-primary text-on-primary px-8 py-3 rounded-[6px] font-label-caps text-label-caps transition-all hover:bg-opacity-90">Get Started</button>
+<button class="border border-border-emphasis bg-surface text-primary px-8 py-3 rounded-[6px] font-label-caps text-label-caps transition-all hover:bg-surface-container-low">View Methodology</button>
+</div>
+</div>
+</section>
+<!-- Integration Section (The Report Mockup) -->
+<section class="py-section-gap bg-surface">
+<div class="max-w-7xl mx-auto px-container-padding">
+<div class="mb-12 text-center">
+<h2 class="font-headline-lg text-2xl mb-2">The 3R Analysis Report</h2>
+<p class="font-body-base text-on-surface-variant opacity-65">Automated extraction and validation of experimental parameters.</p>
+</div>
+<!-- Report Mockup Card -->
+<div class="bg-white border border-border-subtle rounded-xl overflow-hidden shadow-sm max-w-5xl mx-auto">
+<!-- Report Header -->
+<div class="p-6 border-b border-border-subtle flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<div class="font-monospace-data text-on-surface-variant opacity-50 mb-1">REF: PROTOCOL-2024-X82</div>
+<h3 class="font-card-title text-xl">Cardiovascular Toxicity Study (GLP)</h3>
+</div>
+<div class="flex items-center gap-6">
+<div class="text-right">
+<div class="font-small-label uppercase text-on-surface-variant opacity-65">3R Alignment Score</div>
+<div class="font-headline-lg text-3xl text-replacement-text">88<span class="text-lg opacity-40">/100</span></div>
+</div>
+<div class="h-12 w-px bg-border-subtle"></div>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-replacement-bg text-replacement-text border border-replacement-border rounded font-badge-button uppercase">Replacement</span>
+<span class="px-2 py-1 bg-refinement-bg text-refinement-text border border-refinement-border rounded font-badge-button uppercase">Refinement</span>
+</div>
+</div>
+</div>
+<div class="grid md:grid-cols-3 divide-x divide-border-subtle">
+<!-- Sidebar: Extracted Parameters -->
+<div class="p-6 bg-surface-container-low">
+<div class="font-label-caps text-on-surface-variant mb-4 uppercase text-xs tracking-widest">Extracted Parameters</div>
+<div class="space-y-4">
+<div class="p-3 bg-white border border-border-subtle rounded">
+<div class="font-small-label text-on-surface-variant opacity-65">Species</div>
+<div class="font-body-base font-medium">Mus musculus (C57BL/6)</div>
+</div>
+<div class="p-3 bg-white border border-border-subtle rounded">
+<div class="font-small-label text-on-surface-variant opacity-65">Methodology</div>
+<div class="font-body-base font-medium">In vivo injection (IV)</div>
+</div>
+<div class="p-3 bg-white border border-border-subtle rounded">
+<div class="font-small-label text-on-surface-variant opacity-65">Duration</div>
+<div class="font-body-base font-medium">28 Days (Sub-chronic)</div>
+</div>
+</div>
+</div>
+<!-- Main: Analysis Details -->
+<div class="md:col-span-2 p-6">
+<div class="font-label-caps text-on-surface-variant mb-4 uppercase text-xs tracking-widest">Validated Alternatives Found</div>
+<div class="space-y-4">
+<div class="border border-border-subtle rounded p-4 hover:border-border-emphasis transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-card-title text-base">Human iPSC-derived Cardiomyocytes</h4>
+<span class="font-monospace-data text-xs px-1.5 py-0.5 bg-info-bg text-info-text border border-info-border rounded">OECD TG 455</span>
+</div>
+<p class="text-sm text-on-surface-variant opacity-80 mb-3">Strong correlation with in vivo results for arrhythmia prediction. Replaces the need for primary rodent cell harvest.</p>
+<div class="flex items-center gap-4 text-xs font-metadata text-on-surface-variant opacity-65">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span> 94% Similarity</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">description</span> 12 Peer-reviewed Sources</span>
+</div>
+</div>
+<div class="border border-border-subtle rounded p-4 hover:border-border-emphasis transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-card-title text-base">Micro-physiological Systems (MPS)</h4>
+<span class="font-monospace-data text-xs px-1.5 py-0.5 bg-info-bg text-info-text border border-info-border rounded">ECVAM Validated</span>
+</div>
+<p class="text-sm text-on-surface-variant opacity-80 mb-3">Multi-organ-on-a-chip platform allowing for complex metabolite interaction studies without whole-animal testing.</p>
+<div class="flex items-center gap-4 text-xs font-metadata text-on-surface-variant opacity-65">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span> 82% Similarity</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">description</span> 5 Peer-reviewed Sources</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Section -->
+<section class="py-section-gap">
+<div class="max-w-7xl mx-auto px-container-padding">
+<div class="grid md:grid-cols-3 gap-card-gap">
+<!-- Automated Extraction -->
+<div class="p-8 bg-white border border-border-subtle rounded-lg group hover:border-border-emphasis transition-all">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center mb-6 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-size: 28px;">auto_awesome</span>
+</div>
+<h3 class="font-headline-lg mb-3">Automated Extraction</h3>
+<p class="font-body-base text-on-surface-variant opacity-80">
+                        Our NLP engine parses protocol drafts to extract species, dosages, and endpoints instantly, ensuring no ethical parameter is overlooked.
+                    </p>
+</div>
+<!-- Validated Sources -->
+<div class="p-8 bg-white border border-border-subtle rounded-lg group hover:border-border-emphasis transition-all">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center mb-6 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-size: 28px;">verified_user</span>
+</div>
+<h3 class="font-headline-lg mb-3">Validated Sources</h3>
+<p class="font-body-base text-on-surface-variant opacity-80">
+                        Direct integration with OECD, ECVAM, and ECHA databases. Cross-reference your protocol against international safety guidelines.
+                    </p>
+</div>
+<!-- Impact Visualization -->
+<div class="p-8 bg-white border border-border-subtle rounded-lg group hover:border-border-emphasis transition-all">
+<div class="w-12 h-12 bg-surface-container-low rounded flex items-center justify-center mb-6 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-size: 28px;">insights</span>
+</div>
+<h3 class="font-headline-lg mb-3">Impact Visualization</h3>
+<p class="font-body-base text-on-surface-variant opacity-80">
+                        Quantify the reduction in animal use and refinement of procedures with clear, audit-ready visual reports for ethical committees.
+                    </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Jurisdictions CTA -->
+<section class="py-section-gap bg-surface-container-lowest border-y border-border-subtle">
+<div class="max-w-7xl mx-auto px-container-padding flex flex-col md:flex-row items-center justify-between gap-8">
+<div>
+<h2 class="font-headline-lg text-2xl mb-2">Global Jurisdictional Support</h2>
+<p class="font-body-base text-on-surface-variant opacity-65">Tailored ethical analysis for EU Directive 2010/63, US AWA, and APAC guidelines.</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex -space-x-2">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-container overflow-hidden">
+<img alt="EU Flag" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCikjdRB2tSSY4KGRrYOKjNVyPlkXWNduK9raYJRWkQgJeb8923jPj0OxkFiyp4vdexuJfYc6u-VE1aLr1s1Yj6DASzZsqzPiMqNEZ6dkO_2WJ8vAh8y4IyEQAoMdo1y_ZTPOONh39pas3phqaRyRDzSnuJsFocCg28zRWUAWWZmCro1B3v6tg4rWkJdLH94tFGjYDbAylC35NEASgy6sH2c4kn3pMSr-pHTTMHGnZxo2Kg3qXCFwfRTYlulrQfHfzlW5QgnmJNOJHg"/>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-container overflow-hidden">
+<img alt="US Flag" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu7D2CcEA-hKYCFvbFnIVd44ni4a9a9HOs-RNzMfZ4EoMhxC1I2tAI3YHTZZeZOwpegI_FkOZRJfMgnERLryOE3C6AuISFyeRbfNMfLrMB_3nUvYHxiCjLDHPuOEFNAHLrTMB5Nke8OEzmv4RmLniptpYdodaP_x3zYCfL7SErQjOFI9Dc4bHIawcS-3P8nQp9QjOeKkLntulvDZ5gRIIb8k7pVvDvE-IXSaM66PoVVhfhwx_yv6dMkBMcYLIxC7na7a95s1XcA1wk"/>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-surface-container overflow-hidden">
+<img alt="UK Flag" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqaoIFitA8ada3laeRLmNFwa0O8oa4G4lo57KyLRjaWBxONsnsSUlGE-eTRpgtGrY-3fc7Q2uTmXGfd469hn0CpN1-fKcOCPqL7Hn1qfR9jEDm98Kb0MZsQg4DI_i5E7idSgh_azgwzS6uPWgkcx3_2a4ET3nWquqWqA7z0rm9bI2RIOnqfE_V7-tXBv4wQ8oHwpLh1qkqwne9zAgE6DE_XZq0Z-IlHUcNhIv5BVDaV_vlWeptAw5W_noetKDOIdrOxTfVVmEsImBR"/>
+</div>
+</div>
+<button class="font-label-caps text-label-caps text-primary border-b border-primary hover:opacity-70 transition-opacity">Explore Jurisdictions</button>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full mt-section-gap border-t border-border-subtle dark:border-outline-variant bg-surface-container-lowest dark:bg-surface-container-lowest">
+<div class="py-12 px-container-padding max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-fine-gap">
+<div class="flex flex-col items-center md:items-start gap-4">
+<span class="font-nav-logo text-nav-logo text-primary">3R Assist</span>
+<span class="font-body-base text-body-base text-on-surface dark:text-on-surface opacity-65">
+                    © 2024 3R Assist. Precision Ethics in Scientific Research.
+                </span>
+</div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 hover:text-primary transition-opacity" href="#">Privacy Policy</a>
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 hover:text-primary transition-opacity" href="#">Terms of Service</a>
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 hover:text-primary transition-opacity" href="#">Ethical Framework</a>
+<a class="font-body-base text-body-base text-on-surface-variant opacity-65 hover:opacity-100 hover:text-primary transition-opacity" href="#">Contact Support</a>
+</div>
+</div>
+</footer>
+<script>
+        // Simple micro-interaction for the report alignment score
+        document.addEventListener('DOMContentLoaded', () => {
+            const scoreElement = document.querySelector('.font-headline-lg.text-3xl');
+            if (scoreElement) {
+                let start = 0;
+                const end = 88;
+                const duration = 1500;
+                const step = (timestamp) => {
+                    if (!start) start = timestamp;
+                    const progress = Math.min((timestamp - start) / duration, 1);
+                    const current = Math.floor(progress * end);
+                    scoreElement.innerHTML = `${current}<span class="text-lg opacity-40">/100</span>`;
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+        });
+    </script>
+</body></html>
