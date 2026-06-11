@@ -6,7 +6,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
 
-from app.models.protocol import ConfidenceLevel, ProtocolParameters
+from app.models.protocol import (
+    ConfidenceLevel,
+    FieldConfidence,
+    PARAMETER_FIELD_KEYS,
+    ProtocolParameters,
+)
 
 EXTRACTION_SYSTEM_PROMPT = """Extract experimental protocol parameters from the user's text.
 Return JSON only with keys: biological_model, objective, procedure, endpoint, application_area.
@@ -23,6 +28,7 @@ class ExtractionError:
 class ExtractionResult:
     params: ProtocolParameters
     confidence: ConfidenceLevel
+    field_confidence: FieldConfidence
 
 
 class LLMAdapter(ABC):
@@ -38,6 +44,19 @@ def confidence_from_params(params: ProtocolParameters) -> ConfidenceLevel:
     if filled >= 2:
         return "medium"
     return "low"
+
+
+def field_confidence_from_params(params: ProtocolParameters) -> FieldConfidence:
+    values = {
+        key: getattr(params, key)
+        for key in PARAMETER_FIELD_KEYS
+    }
+    return FieldConfidence(
+        **{
+            key: "high" if values[key] else "low"
+            for key in PARAMETER_FIELD_KEYS
+        }
+    )
 
 
 class StubLLMAdapter(LLMAdapter):
@@ -89,7 +108,11 @@ class StubLLMAdapter(LLMAdapter):
         if params.filled_count() == 0:
             return ExtractionError()
 
-        return ExtractionResult(params=params, confidence=confidence_from_params(params))
+        return ExtractionResult(
+            params=params,
+            confidence=confidence_from_params(params),
+            field_confidence=field_confidence_from_params(params),
+        )
 
     @staticmethod
     def _first_match(text: str, patterns: tuple[tuple[str, str], ...]) -> str | None:
@@ -132,7 +155,11 @@ class AnthropicLLMAdapter(LLMAdapter):
         if params.filled_count() == 0:
             return ExtractionError()
 
-        return ExtractionResult(params=params, confidence=confidence_from_params(params))
+        return ExtractionResult(
+            params=params,
+            confidence=confidence_from_params(params),
+            field_confidence=field_confidence_from_params(params),
+        )
 
 
 def build_llm_adapter(*, api_key: str | None, model: str) -> LLMAdapter:

@@ -10,4 +10,8 @@ class ExtractionService:
         result = self._llm.extract_parameters(protocol_text)
         if isinstance(result, ExtractionError):
             return result
-        return AnalyzeResponse(params=result.params, confidence=result.confidence)
+        return AnalyzeResponse(
+            params=result.params,
+            confidence=result.confidence,
+            field_confidence=result.field_confidence,
+        )

@@ -24,6 +24,8 @@ def test_analyze_returns_parameters():
     data = response.json()
     assert data["confidence"] in {"high", "medium", "low"}
     assert data["params"]["biological_model"] is not None
+    assert data["field_confidence"]["biological_model"] == "high"
+    assert data["field_confidence"]["endpoint"] == "high"
 
 
 def test_analyze_rejects_short_text():

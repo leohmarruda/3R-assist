@@ -40,6 +40,7 @@ export default function AnalyzePage({ onSubmit }) {
         state: {
           params: result.params,
           confidence: result.confidence,
+          fieldConfidence: result.field_confidence,
           protocolText: protocolText.trim(),
           lang,
         },

@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
-import ConfidenceBadge from '../components/ConfidenceBadge'
 import ParameterField from '../components/ParameterField'
 import {
   emptyParameterKeys,
+  normalizeFieldConfidence,
   PARAMETER_FIELDS,
 } from '../lib/protocol'
 
@@ -25,10 +25,14 @@ export default function ParametersPage() {
     normalizeParams(analysis?.params ?? {}),
   )
 
-  if (!analysis?.params || !analysis?.confidence) {
+  if (!analysis?.params) {
     return <Navigate to="/" replace />
   }
 
+  const fieldConfidence = normalizeFieldConfidence(
+    analysis.fieldConfidence,
+    params,
+  )
   const incompleteKeys = new Set(emptyParameterKeys(params))
 
   function updateField(key, value) {
@@ -42,13 +46,14 @@ export default function ParametersPage() {
         protocolText: analysis.protocolText,
         lang: analysis.lang,
         confidence: analysis.confidence,
+        fieldConfidence,
       },
     })
   }
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-container-padding py-section-gap">
-      <div className="mb-section-gap flex flex-col gap-card-gap sm:flex-row sm:items-start sm:justify-between">
+      <div className="mb-section-gap">
         <Link
           to="/"
           state={{
@@ -59,7 +64,6 @@ export default function ParametersPage() {
         >
           ← {t('s2.backToEdit')}
         </Link>
-        <ConfidenceBadge level={analysis.confidence} />
       </div>
 
       <header className="mb-section-gap">
@@ -80,6 +84,7 @@ export default function ParametersPage() {
             value={params[key]}
             onChange={(value) => updateField(key, value)}
             incomplete={incompleteKeys.has(key)}
+            confidence={fieldConfidence[key]}
           />
         ))}
 

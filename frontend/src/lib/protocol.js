@@ -15,3 +15,14 @@ export function emptyParameterKeys(params) {
 export function createEmptyParams() {
   return Object.fromEntries(PARAMETER_FIELDS.map(({ key }) => [key, '']))
 }
+
+export function normalizeFieldConfidence(fieldConfidence, params) {
+  return Object.fromEntries(
+    PARAMETER_FIELDS.map(({ key }) => {
+      const level = fieldConfidence?.[key]
+      if (level) return [key, level]
+      const value = params?.[key]?.trim()
+      return [key, value ? 'medium' : 'low']
+    }),
+  )
+}

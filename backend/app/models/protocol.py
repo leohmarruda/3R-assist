@@ -4,6 +4,14 @@ from pydantic import BaseModel, Field
 
 ConfidenceLevel = Literal["high", "medium", "low"]
 
+PARAMETER_FIELD_KEYS = (
+    "biological_model",
+    "objective",
+    "procedure",
+    "endpoint",
+    "application_area",
+)
+
 
 class ProtocolParameters(BaseModel):
     biological_model: str | None = None
@@ -31,6 +39,15 @@ class AnalyzeRequest(BaseModel):
     lang: Literal["pt", "en"] | None = None
 
 
+class FieldConfidence(BaseModel):
+    biological_model: ConfidenceLevel | None = None
+    objective: ConfidenceLevel | None = None
+    procedure: ConfidenceLevel | None = None
+    endpoint: ConfidenceLevel | None = None
+    application_area: ConfidenceLevel | None = None
+
+
 class AnalyzeResponse(BaseModel):
     params: ProtocolParameters
     confidence: ConfidenceLevel
+    field_confidence: FieldConfidence

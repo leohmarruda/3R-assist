@@ -1,22 +1,27 @@
 import { useTranslation } from 'react-i18next'
+import ConfidenceBadge from './ConfidenceBadge'
 
 export default function ParameterField({
   labelKey,
   value,
   onChange,
   incomplete = false,
+  confidence,
   id,
 }) {
   const { t } = useTranslation()
 
   return (
     <div className="space-y-1">
-      <label
-        htmlFor={id}
-        className="font-small-label text-small-label uppercase text-on-surface-variant opacity-65"
-      >
-        {t(labelKey)}
-      </label>
+      <div className="flex items-center justify-between gap-fine-gap">
+        <label
+          htmlFor={id}
+          className="font-small-label text-small-label uppercase text-on-surface-variant opacity-65"
+        >
+          {t(labelKey)}
+        </label>
+        <ConfidenceBadge level={confidence} />
+      </div>
       <input
         id={id}
         type="text"
