@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import ProtocolTextarea, { MIN_LENGTH } from '../components/ProtocolTextarea'
+import { DEFAULT_PROTOCOL_TEXT } from '../lib/defaultProtocolText'
 
 export default function AnalyzePage({ onSubmit }) {
   const { t, i18n } = useTranslation()
@@ -10,15 +11,15 @@ export default function AnalyzePage({ onSubmit }) {
   const location = useLocation()
   const restored = location.state
 
-  const [protocolText, setProtocolText] = useState(restored?.protocolText ?? '')
-  const [lang, setLang] = useState(restored?.lang ?? 'pt')
+  const [protocolText, setProtocolText] = useState(
+    restored?.protocolText ?? DEFAULT_PROTOCOL_TEXT,
+  )
+  const [lang, setLang] = useState(restored?.lang ?? 'en')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (restored?.lang) {
-      i18n.changeLanguage(restored.lang)
-    }
+    i18n.changeLanguage(restored?.lang ?? 'en')
   }, [restored?.lang, i18n])
 
   const trimmedLength = protocolText.trim().length

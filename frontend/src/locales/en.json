@@ -38,8 +38,21 @@
     }
   },
   "s3": {
-    "placeholderTitle": "Results",
-    "placeholderBody": "Alternative search (POST /search) will be wired in the next step. Confirmed parameters are ready."
+    "extractedParameters": "Extracted parameters",
+    "recommendedAlternatives": "Recommended Alternatives",
+    "summaryRecommendation": "Summary Recommendation",
+    "colParameter": "Parameter",
+    "colValue": "Value",
+    "colMethod": "Method Name",
+    "colValidation": "Validation Status",
+    "colSpecies": "Species Replaced",
+    "colEndpoint": "Endpoint Type",
+    "colSource": "Source",
+    "threeR": {
+      "replacement": "Replacement",
+      "reduction": "Reduction",
+      "refinement": "Refinement"
+    }
   },
   "s4": {
     "placeholderTitle": "Direct search",

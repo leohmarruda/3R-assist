@@ -27,7 +27,7 @@ class ProtocolParameters(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    protocol_text: str = Field(..., min_length=20, max_length=5000)
+    protocol_text: str = Field(..., min_length=20, max_length=10000)
     lang: Literal["pt", "en"] | None = None
 
 

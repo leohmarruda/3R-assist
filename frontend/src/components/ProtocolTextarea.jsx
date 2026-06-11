@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import LangToggle from './LangToggle'
 
 const MIN_LENGTH = 20
-const MAX_LENGTH = 5000
+const MAX_LENGTH = 10000
 
 export { MIN_LENGTH, MAX_LENGTH }
 

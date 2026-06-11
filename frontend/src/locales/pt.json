@@ -38,8 +38,21 @@
     }
   },
   "s3": {
-    "placeholderTitle": "Resultados",
-    "placeholderBody": "A busca de alternativas (POST /search) será conectada na próxima etapa. Os parâmetros confirmados estão prontos."
+    "extractedParameters": "Parâmetros extraídos",
+    "recommendedAlternatives": "Alternativas recomendadas",
+    "summaryRecommendation": "Recomendação resumida",
+    "colParameter": "Parâmetro",
+    "colValue": "Valor",
+    "colMethod": "Método",
+    "colValidation": "Status de validação",
+    "colSpecies": "Espécie substituída",
+    "colEndpoint": "Tipo de endpoint",
+    "colSource": "Fonte",
+    "threeR": {
+      "replacement": "Substituição",
+      "reduction": "Redução",
+      "refinement": "Refinamento"
+    }
   },
   "s4": {
     "placeholderTitle": "Busca direta",
