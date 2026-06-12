@@ -1,8 +1,9 @@
-"""Retrieval service — semantic search over active methods."""
+"""Retrieval service — filter-based matching (MVP) or semantic search."""
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 from app.adapters.embedder import EmbedderAdapter
 from app.models.method import Method
@@ -30,6 +31,20 @@ def build_query_text(params: ProtocolParameters) -> str:
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     return sum(a * b for a, b in zip(left, right, strict=True))
+
+
+def _token_set(text: str) -> set[str]:
+    return {token for token in text.lower().split() if len(token) > 2}
+
+
+def filter_only_score(method: Method, params: ProtocolParameters) -> float:
+    """Heuristic score for MVP validation without embedding models."""
+    score = 0.5
+    score += 0.15 * len(_matched_params(method, params))
+    if params.procedure_text:
+        overlap = len(_token_set(params.procedure_text) & _token_set(method.text_for_embedding))
+        score += min(0.35, overlap * 0.05)
+    return min(1.0, round(score, 4))
 
 
 def _matches_endpoint(method: Method, params: ProtocolParameters) -> bool:
@@ -77,16 +92,83 @@ def _matched_params(method: Method, params: ProtocolParameters) -> list[str]:
     return matched
 
 
+def _build_recommendations(
+    scored: list[tuple[Method, float]],
+    params: ProtocolParameters,
+) -> list[Recommendation]:
+    scored.sort(key=lambda item: (-item[1], item[0].slug))
+    return [
+        Recommendation(
+            method=method,
+            rank=index,
+            score=score,
+            matched_params=_matched_params(method, params),
+        )
+        for index, (method, score) in enumerate(scored, start=1)
+    ]
+
+
 class RetrievalService:
-    def __init__(self, repository: MethodRepository, embedder: EmbedderAdapter) -> None:
+    def __init__(
+        self,
+        repository: MethodRepository,
+        embedder: EmbedderAdapter,
+        *,
+        semantic_ranking: bool = False,
+    ) -> None:
         self._repository = repository
         self._embedder = embedder
+        self._semantic_ranking = semantic_ranking
 
     async def search(
         self,
         params: ProtocolParameters,
     ) -> tuple[list[Recommendation], str | None]:
         methods = await self._repository.list_active()
+        if not methods:
+            return [], None
+
+        if self._semantic_ranking:
+            return self._search_semantic(methods, params)
+        return self._search_filter_only(methods, params)
+
+    def _search_with_relaxation(
+        self,
+        candidates: list[Method],
+        params: ProtocolParameters,
+        rank: Callable[[list[Method], ProtocolParameters], list[Recommendation]],
+    ) -> tuple[list[Recommendation], str | None]:
+        relaxation: str | None = None
+
+        filtered = _apply_filters(candidates, params, endpoint=True, route=True)
+        ranked = rank(filtered, params)
+
+        if len(ranked) < MIN_RESULTS:
+            relaxation = "route_filter_relaxed"
+            filtered = _apply_filters(candidates, params, endpoint=True, route=False)
+            ranked = rank(filtered, params)
+
+        if len(ranked) < MIN_RESULTS:
+            relaxation = "endpoint_and_route_filters_relaxed"
+            ranked = rank(candidates, params)[:MIN_RESULTS]
+
+        if relaxation:
+            logger.info("Retrieval filter relaxation applied: %s", relaxation)
+
+        return ranked, relaxation
+
+    def _search_filter_only(
+        self,
+        methods: list[Method],
+        params: ProtocolParameters,
+    ) -> tuple[list[Recommendation], str | None]:
+        return self._search_with_relaxation(methods, params, self._rank_filter_only)
+
+    def _search_semantic(
+        self,
+        methods: list[Method],
+        params: ProtocolParameters,
+    ) -> tuple[list[Recommendation], str | None]:
         scorable = [method for method in methods if method.embedding_json]
         if not scorable:
             return [], None
@@ -96,26 +178,21 @@ class RetrievalService:
             return [], None
 
         query_vector = self._embedder.embed(query_text)
-        relaxation: str | None = None
+        return self._search_with_relaxation(
+            scorable,
+            params,
+            lambda filtered, p: self._rank_semantic(filtered, query_vector, p),
+        )
 
-        filtered = _apply_filters(scorable, params, endpoint=True, route=True)
-        ranked = self._rank(filtered, query_vector, params)
+    def _rank_filter_only(
+        self,
+        methods: list[Method],
+        params: ProtocolParameters,
+    ) -> list[Recommendation]:
+        scored = [(method, filter_only_score(method, params)) for method in methods]
+        return _build_recommendations(scored, params)
 
-        if len(ranked) < MIN_RESULTS:
-            relaxation = "route_filter_relaxed"
-            filtered = _apply_filters(scorable, params, endpoint=True, route=False)
-            ranked = self._rank(filtered, query_vector, params)
-
-        if len(ranked) < MIN_RESULTS:
-            relaxation = "endpoint_and_route_filters_relaxed"
-            ranked = self._rank(scorable, query_vector, params)[:MIN_RESULTS]
-
-        if relaxation:
-            logger.info("Retrieval filter relaxation applied: %s", relaxation)
-
-        return ranked, relaxation
-
-    def _rank(
+    def _rank_semantic(
         self,
         methods: list[Method],
         query_vector: list[float],
@@ -125,16 +202,6 @@ class RetrievalService:
         for method in methods:
             if not method.embedding_json:
                 continue
-            score = cosine_similarity(query_vector, method.embedding_json)
+            score = round(cosine_similarity(query_vector, method.embedding_json), 4)
             scored.append((method, score))
-
-        scored.sort(key=lambda item: item[1], reverse=True)
-        return [
-            Recommendation(
-                method=method,
-                rank=index,
-                score=round(score, 4),
-                matched_params=_matched_params(method, params),
-            )
-            for index, (method, score) in enumerate(scored, start=1)
-        ]
+        return _build_recommendations(scored, params)

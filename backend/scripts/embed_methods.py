@@ -8,7 +8,7 @@ Usage:
     python embed_methods.py --force   # re-embed all active methods
 
 Requires:
-    pip install asyncpg sentence-transformers python-dotenv
+    pip install -r requirements-ml.txt
     DATABASE_URL env var set, or a .env file in the working directory.
 """
 

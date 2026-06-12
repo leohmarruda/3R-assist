@@ -48,4 +48,6 @@ class StubEmbedderAdapter(EmbedderAdapter):
 @lru_cache
 def build_embedder() -> EmbedderAdapter:
     settings = get_settings()
+    if not settings.semantic_ranking:
+        return StubEmbedderAdapter()
     return SentenceTransformerEmbedder(settings.embedding_model)

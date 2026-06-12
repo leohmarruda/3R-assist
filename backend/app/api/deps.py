@@ -34,7 +34,9 @@ def get_extraction_service() -> ExtractionService:
 
 
 def get_retrieval_service() -> RetrievalService:
+    settings = get_settings()
     return RetrievalService(
         repository=get_method_repository(),
         embedder=get_embedder(),
+        semantic_ranking=settings.semantic_ranking,
     )

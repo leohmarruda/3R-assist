@@ -41,6 +41,11 @@ class Settings(BaseSettings):
         alias="EMBEDDING_MODEL",
     )
 
+    semantic_ranking: bool = Field(
+        default=False,
+        alias="SEMANTIC_RANKING",
+    )
+
     auth_secret: str | None = Field(default=None, alias="AUTH_SECRET")
 
     @property

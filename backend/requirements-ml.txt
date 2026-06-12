@@ -1,0 +1,4 @@
+# Optional ML dependencies for offline embedding scripts (embed_methods.py).
+# Not required for the API when SEMANTIC_RANKING=false (default MVP mode).
+-r requirements.txt
+sentence-transformers>=3.0
