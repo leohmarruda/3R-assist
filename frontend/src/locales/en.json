@@ -2,7 +2,18 @@
   "nav": {
     "analyze": "Analyze",
     "search": "Search",
+    "admin": "Admin",
     "signIn": "Sign in"
+  },
+  "admin": {
+    "title": "Database admin",
+    "subtitle": "Browse public PostgreSQL tables.",
+    "tabsLabel": "Database tables",
+    "loading": "Loading…",
+    "loadError": "Could not load admin data.",
+    "noTables": "No tables found.",
+    "emptyTable": "This table has no rows.",
+    "rowCount": "Showing {{shown}} of {{total}} rows"
   },
   "s1": {
     "title": "Describe your experimental protocol",
@@ -11,6 +22,7 @@
     "placeholder": "We used Wistar rats to assess acute oral toxicity…",
     "submit": "Analyze protocol",
     "submitting": "Analyzing…",
+    "mock": "Demo",
     "searchLink": "Already know what you're looking for?",
     "searchLinkAction": "Direct search",
     "anonymous": "Continue without an account (anonymous) — history available after registration",
@@ -23,18 +35,70 @@
     "backToEdit": "Edit protocol",
     "backToParams": "Back to parameters",
     "searchCta": "Search alternatives",
-    "incompleteWarning": "Incomplete fields may reduce search precision.",
+    "incompleteWarning": "Endpoint category is required before searching.",
+    "excerptLabel": "Source excerpt",
+    "matchingSection": "Matching parameters",
+    "displaySection": "Display context",
+    "emptyOption": "— Not specified —",
+    "boolean": {
+      "yes": "Yes",
+      "no": "No"
+    },
+    "hints": {
+      "route": "oral, intraperitoneal",
+      "procedureText": "Brief English description used for semantic matching (max ~30 words)."
+    },
     "confidence": {
       "high": "High confidence",
       "medium": "Medium confidence",
       "low": "Low confidence"
     },
     "fields": {
-      "biologicalModel": "Biological model",
-      "objective": "Objective",
-      "procedure": "Procedure",
-      "endpoint": "Endpoint",
-      "applicationArea": "Application area"
+      "endpointCategory": "Endpoint category",
+      "route": "Route",
+      "applicationArea": "Application area",
+      "procedureText": "Procedure text",
+      "species": "Species",
+      "nAnimals": "Number of animals",
+      "regulatory": "Regulatory context"
+    },
+    "enums": {
+      "endpointCategory": {
+        "acute_toxicity": "Acute toxicity",
+        "skin_irritation": "Skin irritation",
+        "skin_corrosion": "Skin corrosion",
+        "ocular_irritation": "Ocular irritation",
+        "skin_sensitisation": "Skin sensitisation",
+        "phototoxicity": "Phototoxicity",
+        "genotoxicity": "Genotoxicity",
+        "pyrogenicity": "Pyrogenicity",
+        "skin_absorption": "Skin absorption"
+      },
+      "route": {
+        "oral": "Oral",
+        "intraperitoneal": "Intraperitoneal",
+        "intravenous": "Intravenous",
+        "dermal": "Dermal",
+        "ocular": "Ocular",
+        "inhalation": "Inhalation",
+        "in_vitro": "In vitro"
+      },
+      "applicationArea": {
+        "pharma": "Pharmaceutical",
+        "cosmetics": "Cosmetics",
+        "chemical_safety": "Chemical safety",
+        "general": "General research"
+      },
+      "species": {
+        "rat": "Rat",
+        "mouse": "Mouse",
+        "rabbit": "Rabbit",
+        "guinea_pig": "Guinea pig",
+        "chicken": "Chicken",
+        "zebrafish": "Zebrafish",
+        "in_vitro": "In vitro",
+        "other": "Other"
+      }
     }
   },
   "s3": {

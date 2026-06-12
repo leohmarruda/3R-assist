@@ -105,7 +105,7 @@ Access terms for each source will be verified before any automated ingestion is 
 
 - Free-text protocol input, with parameter extraction across the core fields  
 - Parameter display on the results screen for user confirmation and correction  
-- 10–20 manually curated methods covering the most common CEUA use cases in Brazil  
+- 25 manually curated methods covering the most common CEUA use cases in Brazil, sourced from CONCEA normative resolutions (RN 18/2014 and subsequent) and corresponding OECD guidelines  
 - Ranked recommendations with 3Rs classification and jurisdictional indicators  
 - Direct database search with advanced filters  
 - Simple user accounts via email magic link, with visible anonymous bypass  
@@ -168,7 +168,7 @@ A researcher with no prior knowledge of alternative methods describes a real pro
 
 ## 10\. Budget
 
-Apart from the team compensation the project operates on a minimal budget: server infrastructure and LLM API usage. All architectural decisions in the specification prioritize zero fixed infrastructure cost at MVP (Render free tier, Vercel free tier, local embeddings model, SQLite). The only variable cost is the Anthropic API for protocol analysis, estimated at a fraction of a cent per query.
+Apart from the team compensation the project operates on a minimal budget: server infrastructure and LLM API usage. All architectural decisions in the specification prioritize zero fixed infrastructure cost at MVP (Render free tier, Vercel free tier, Neon/Vercel Postgres free tier, local embeddings model). The only variable cost is the Anthropic API for protocol analysis, estimated at a fraction of a cent per query.
 
 ---
 
@@ -255,7 +255,8 @@ These became explicit constraints in `spec.md` (Module 2):
 - **Database access.** Terms of use of ALT Web, ECVAM, and OECD must be verified before any automated ingestion is assumed. Manual periodic download is the safe fallback and the baseline for the MVP.  
 - **Data quality.** Source data is inconsistent in format and completeness; the ingestion pipeline requires a normalization layer (addressed by manual curation in the MVP, automation deferred to Phase 4).  
 - **Language.** Protocols may be submitted in Portuguese or English. The architecture supports both from day one — deferring this would be expensive to retrofit.  
-- **Database updates.** New methods are published continuously. The architecture must support re-ingestion without rebuilding from scratch (handled by manual update \+ re-deploy in the MVP; incremental pipeline in later phases).
+- **Database updates.** New methods are published continuously. The architecture must support re-ingestion without rebuilding from scratch (handled by manual update + re-deploy in the MVP; incremental pipeline in later phases).
+- **Database infrastructure.** PostgreSQL (Neon/Vercel Postgres free tier) is used for production; replaces the original SQLite/Turso plan (see ADR-013). Single `DATABASE_URL` env var; no fixed cost at MVP scale.
 
 ### 13.6 Simpler alternative (explicitly considered, kept as fallback)
 

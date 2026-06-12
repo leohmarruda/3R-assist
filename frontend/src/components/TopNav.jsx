@@ -36,12 +36,24 @@ export default function TopNav() {
             ))}
           </nav>
         </div>
-        <button
-          type="button"
-          className="rounded-md bg-primary px-4 py-2 font-nav-link text-nav-link text-on-primary transition-opacity hover:opacity-90"
-        >
-          {t('nav.signIn')}
-        </button>
+        <div className="flex items-center gap-3">
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              isActive
+                ? 'rounded-md border border-primary bg-surface-container-low px-4 py-2 font-nav-link text-nav-link font-medium text-primary'
+                : 'rounded-md border border-border-emphasis bg-surface-container-lowest px-4 py-2 font-nav-link text-nav-link text-on-surface transition-colors hover:bg-surface-container'
+            }
+          >
+            {t('nav.admin')}
+          </NavLink>
+          <button
+            type="button"
+            className="rounded-md bg-primary px-4 py-2 font-nav-link text-nav-link text-on-primary transition-opacity hover:opacity-90"
+          >
+            {t('nav.signIn')}
+          </button>
+        </div>
       </div>
     </header>
   )

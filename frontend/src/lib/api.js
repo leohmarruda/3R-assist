@@ -6,7 +6,16 @@ export async function apiFetch(path, options = {}) {
     ...options,
   })
   if (!response.ok) {
-    throw new Error(`API ${response.status}: ${response.statusText}`)
+    let message = `API ${response.status}: ${response.statusText}`
+    try {
+      const body = await response.json()
+      if (body?.error?.message) {
+        message = body.error.message
+      }
+    } catch {
+      // keep default message
+    }
+    throw new Error(message)
   }
   return response.json()
 }

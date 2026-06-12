@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from functools import lru_cache
+
+from app.config import get_settings
 
 
 class EmbedderAdapter(ABC):
@@ -11,11 +14,38 @@ class EmbedderAdapter(ABC):
         pass
 
 
-class StubEmbedderAdapter(EmbedderAdapter):
-    """Placeholder until sentence-transformers is wired in Phase 1 retrieval."""
+class SentenceTransformerEmbedder(EmbedderAdapter):
+    def __init__(self, model_name: str) -> None:
+        self._model_name = model_name
+        self._model = None
+
+    def _get_model(self):
+        if self._model is None:
+            from sentence_transformers import SentenceTransformer
+
+            self._model = SentenceTransformer(self._model_name)
+        return self._model
 
     def embed(self, text: str) -> list[float]:
-        raise NotImplementedError("Embedding not implemented in scaffold.")
+        return self._get_model().encode(text, normalize_embeddings=True).tolist()
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        raise NotImplementedError("Embedding not implemented in scaffold.")
+        vectors = self._get_model().encode(texts, normalize_embeddings=True)
+        return [vector.tolist() for vector in vectors]
+
+
+class StubEmbedderAdapter(EmbedderAdapter):
+    """Deterministic low-dim vectors for tests without loading the model."""
+
+    def embed(self, text: str) -> list[float]:
+        seed = sum(ord(char) for char in text) % 997
+        return [((seed + index) % 100) / 100.0 for index in range(8)]
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        return [self.embed(text) for text in texts]
+
+
+@lru_cache
+def build_embedder() -> EmbedderAdapter:
+    settings = get_settings()
+    return SentenceTransformerEmbedder(settings.embedding_model)

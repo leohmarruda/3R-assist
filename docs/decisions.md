@@ -2,7 +2,7 @@
 
 > ADR log. Every significant architectural, infrastructure, or pattern choice is recorded here.
 > Format: `ADR-[NNN]`. Near-impossible decisions are flagged explicitly.
-> Updated throughout M2, M2.5, and M3.
+> Updated throughout M2, M2.5, M3, and M3 Database.
 
 ---
 
@@ -49,6 +49,102 @@ All compressions applied must be documented in `execution-log.md`.
 **Consequences:** Security findings logged in `assumption-log.md` as known risks, not as ADRs, until the project graduates to Standard tier.
 
 ---
+
+## ADR-002 — Backend: Python 3.11 + FastAPI
+
+**Decision:** Python 3.11 + FastAPI.
+
+**Context:** Backend language and framework selection (M2.5 Stack).
+
+**Pattern baseline:** `patterns.md` → Application Architecture (Layered).
+
+**Alternatives:** Node.js + Hono (single JS runtime); Django (more batteries, higher overhead).
+
+**Rationale:** `sentence-transformers`, `anthropic`, and the broader ML ecosystem are Python-native. FastAPI is async by default, generates OpenAPI specs automatically, and has minimal boilerplate. Django adds unnecessary overhead for an API-only backend. Node.js would require a separate ML inference service, adding complexity.
+
+**Reversibility:** Costly (full backend rewrite).
+
+**Consequences:** Frontend and backend are different languages — no code sharing. Acceptable given the clear boundary between API and SPA.
+
+---
+
+## ADR-003 — Frontend: React 18 + Vite
+
+**Decision:** React 18 + Vite, deployed as a static SPA on Vercel.
+
+**Context:** Frontend framework selection (M2.5 Stack).
+
+**Pattern baseline:** `patterns.md` → Frontend State Management.
+
+**Alternatives:** Next.js (SSR/full-stack on Vercel); SvelteKit (lighter bundle, smaller ecosystem).
+
+**Rationale:** Static SPA on Vercel requires no server; reduces infrastructure surface. React ecosystem covers all MVP requirements. Next.js SSR adds deployment complexity with no meaningful benefit given the backend is a separate FastAPI service. Vite is fast and well-supported.
+
+**Reversibility:** Costly.
+
+**Consequences:** CORS configuration required between Vite SPA and FastAPI backend. i18n handled client-side via `react-i18next`.
+
+---
+
+## ADR-004 — Database: SQLite (dev) + Turso (prod) ⚠️ SUPERSEDED by ADR-013
+
+**Decision:** ~~SQLite file for local development; Turso (libSQL) for production.~~
+
+**Superseded by ADR-013.** Retained for history.
+
+**Original rationale:** Turso is SQLite-compatible (libSQL fork), free tier supports the MVP scale, and preserves local SQLite semantics for development.
+
+**Why superseded:** Vercel Postgres (Neon) eliminates the two-driver complexity (sqlite3 locally, libsql-client in prod) and provides the same zero fixed cost constraint. The migration to PostgreSQL was triggered during M3 database work when the additional capabilities (JSONB, BOOLEAN, pgvector path for Phase 3) justified the switch.
+
+---
+
+## ADR-005 — Embeddings: sentence-transformers (local, all-MiniLM-L6-v2)
+
+**Decision:** Local `sentence-transformers` model (`all-MiniLM-L6-v2`, 384 dimensions).
+
+**Context:** Embedding model for semantic similarity between protocol descriptions and curated methods.
+
+**Pattern baseline:** `patterns.md` → External Integrations (ACL); GoF Strategy (swappable provider).
+
+**Alternatives:** OpenAI `text-embedding-3-small` (API cost per call); Cohere embed (API cost); larger local models (higher accuracy, higher resource use).
+
+**Rationale:** Zero variable cost per query. `all-MiniLM-L6-v2` is well-benchmarked for semantic similarity. At 10–20 methods, embedding quality differences between models are unlikely to be decisive. The `EmbedderAdapter` ACL means the model can be swapped without touching the service layer.
+
+**Reversibility:** Easy (swap the adapter implementation).
+
+**Consequences:** Model download (~90MB) must happen at Render build time, not at request time.
+
+---
+
+## ADR-006 — Data Access: Repository for Methods, Active Record for User CRUD
+
+**Decision:** Repository pattern for the Methods domain. Active Record for User, Query, Feedback, and Suggestion entities.
+
+**Context:** Data access pattern selection (M2.6).
+
+**Pattern baseline:** `patterns.md` → Data Access.
+
+**Rationale:** The Methods domain has meaningful query logic (cosine similarity, multi-filter search, embedding management) that warrants encapsulation. User/auth/feedback entities are simple CRUD — Active Record is explicitly permitted by `patterns.md` in this case. Applying Repository to all entities at MVP would be premature abstraction (YAGNI).
+
+**Reversibility:** Easy to promote Active Record entities to Repository later.
+
+**Consequences:** `MethodRepository` is the only Repository interface. All other data access uses SQLAlchemy ORM models directly.
+
+---
+
+## ADR-007 — Layered Architecture with Dependency Inversion at Service/Adapter boundary
+
+**Decision:** Strict Layered architecture; `ExtractionService` and `RetrievalService` receive adapter instances via constructor injection (manual injection, no DI container).
+
+**Context:** Module boundary design (M2.9).
+
+**Pattern baseline:** `patterns.md` → Module Boundaries.
+
+**Rationale:** The two external I/O dependencies (Anthropic API, sentence-transformers) must be injectable to keep services unit-testable. This directly enables testing assumption H3 (extraction precision) — the highest-risk assumption in the project — with a mock LLM adapter.
+
+**Reversibility:** Easy.
+
+**Consequences:** Route handlers instantiate adapters and inject them into services. No DI container at MVP (YAGNI).
 
 ---
 
@@ -130,103 +226,33 @@ All compressions applied must be documented in `execution-log.md`.
 
 **Consequences:** S3 page component must include the link. No backend changes.
 
-**Decision:** Python 3.11 + FastAPI.
-
-**Context:** Backend language and framework selection (M2.5 Stack).
-
-**Pattern baseline:** `patterns.md` → Application Architecture (Layered).
-
-**Alternatives:** Node.js + Hono (single JS runtime); Django (more batteries, higher overhead).
-
-**Rationale:** `sentence-transformers`, `anthropic`, and the broader ML ecosystem are Python-native. FastAPI is async by default, generates OpenAPI specs automatically, and has minimal boilerplate. Django adds unnecessary overhead for an API-only backend. Node.js would require a separate ML inference service, adding complexity.
-
-**Reversibility:** Costly (full backend rewrite).
-
-**Consequences:** Frontend and backend are different languages — no code sharing. Acceptable given the clear boundary between API and SPA.
-
 ---
 
-## ADR-003 — Frontend: React 18 + Vite
+## ADR-013 — Database: PostgreSQL (Neon / Vercel Postgres) — supersedes ADR-004
 
-**Decision:** React 18 + Vite, deployed as a static SPA on Vercel.
+**Decision:** PostgreSQL via Neon (Vercel Postgres) for both development and production. Single driver, single schema dialect.
 
-**Context:** Frontend framework selection (M2.5 Stack).
+**Context:** M3 Database — triggered during methods schema implementation when Vercel Postgres emerged as the zero-friction option for the existing Vercel-hosted frontend stack.
 
-**Pattern baseline:** `patterns.md` → Frontend State Management.
+**Pattern baseline:** `patterns.md` → Data Access (Repository pattern); 12-Factor App (single `DATABASE_URL` env var).
 
-**Alternatives:** Next.js (SSR/full-stack on Vercel); SvelteKit (lighter bundle, smaller ecosystem).
+**Alternatives evaluated:**
 
-**Rationale:** Static SPA on Vercel requires no server; reduces infrastructure surface. React ecosystem covers all MVP requirements. Next.js SSR adds deployment complexity with no meaningful benefit given the backend is a separate FastAPI service. Vite is fast and well-supported.
+| Option | Reason not chosen |
+|---|---|
+| SQLite (dev) + Turso (prod) — original ADR-004 | Two drivers, two dialects; Turso free tier adequate but adds service dependency with no benefit over Neon |
+| Render PostgreSQL add-on | $7/month — breaks zero fixed cost constraint |
+| Supabase free tier | Viable, but Vercel Postgres is lower friction given existing Vercel deployment |
 
-**Reversibility:** Costly.
+**Rationale:** Neon's free tier (0.5 GB storage, branching, serverless) covers MVP scale with no fixed cost. A single `DATABASE_URL` env var replaces the `TURSO_URL` + `TURSO_AUTH_TOKEN` pair. PostgreSQL-native types (`JSONB`, `BOOLEAN`, `TIMESTAMPTZ`) eliminate SQLite workarounds used in the original schema. The pgvector extension (available on Neon) provides a zero-migration path to SQL-level vector search if the corpus exceeds ~200 methods in Phase 3.
 
-**Consequences:** CORS configuration required between Vite SPA and FastAPI backend. i18n handled client-side via `react-i18next`.
+**Reversibility:** Moderate — data migration is a `pg_dump` + restore; the driver (`asyncpg`) and schema are standard PostgreSQL with no Neon-specific extensions.
 
----
+**Consequences:**
+- `db/connection.py` must be rewritten to use `asyncpg` with `DATABASE_URL`.
+- `embed_methods.py` rewritten for `asyncpg` (done — M3 Database).
+- `TURSO_URL` and `TURSO_AUTH_TOKEN` env vars removed from `.env.example`; replaced by single `DATABASE_URL`.
+- SQLite dev database removed from repo; local dev uses a Neon branch or a local PostgreSQL instance.
+- ADR-004 marked superseded; Turso dependency removed from `requirements.txt`.
 
-## ADR-004 — Database: SQLite (dev) + Turso (prod)
-
-**Decision:** SQLite file for local development; Turso (libSQL) for production.
-
-**Context:** Render free tier has ephemeral disk — SQLite files are destroyed on service restart. A persistent storage solution is required.
-
-**Pattern baseline:** `patterns.md` → Data Access (Repository pattern).
-
-**Alternatives:** Render paid plan ($7/mo persistent disk) — breaks zero fixed cost constraint. Supabase free tier (PostgreSQL) — persistent, generous free tier, but deviates from SQLite and adds a managed service dependency. PlanetScale — MySQL, not SQLite-compatible.
-
-**Rationale:** Turso is SQLite-compatible (libSQL fork), free tier supports the MVP scale, and preserves local SQLite semantics for development.
-
-**Reversibility:** Moderate (migration to PostgreSQL is a data-model refactor, not a full rewrite).
-
-**Consequences:** Two different drivers (sqlite3 stdlib locally, libsql-client in prod). Connection factory in `db/connection.py` must abstract this. Turso requires `TURSO_URL` and `TURSO_AUTH_TOKEN` env vars in prod.
-
----
-
-## ADR-005 — Embeddings: sentence-transformers (local, all-MiniLM-L6-v2)
-
-**Decision:** Local `sentence-transformers` model (`all-MiniLM-L6-v2`, 384 dimensions).
-
-**Context:** Embedding model for semantic similarity between protocol descriptions and curated methods.
-
-**Pattern baseline:** `patterns.md` → External Integrations (ACL); GoF Strategy (swappable provider).
-
-**Alternatives:** OpenAI `text-embedding-3-small` (API cost per call); Cohere embed (API cost); larger local models (higher accuracy, higher resource use).
-
-**Rationale:** Zero variable cost per query. `all-MiniLM-L6-v2` is well-benchmarked for semantic similarity. At 10–20 methods, embedding quality differences between models are unlikely to be decisive. The `EmbedderAdapter` ACL means the model can be swapped without touching the service layer.
-
-**Reversibility:** Easy (swap the adapter implementation).
-
-**Consequences:** Model download (~90MB) must happen at Render build time, not at request time.
-
----
-
-## ADR-006 — Data Access: Repository for Methods, Active Record for User CRUD
-
-**Decision:** Repository pattern for the Methods domain. Active Record for User, Query, Feedback, and Suggestion entities.
-
-**Context:** Data access pattern selection (M2.6).
-
-**Pattern baseline:** `patterns.md` → Data Access.
-
-**Rationale:** The Methods domain has meaningful query logic (cosine similarity, multi-filter search, embedding management) that warrants encapsulation. User/auth/feedback entities are simple CRUD — Active Record is explicitly permitted by `patterns.md` in this case. Applying Repository to all entities at MVP would be premature abstraction (YAGNI).
-
-**Reversibility:** Easy to promote Active Record entities to Repository later.
-
-**Consequences:** `MethodRepository` is the only Repository interface. All other data access uses SQLAlchemy ORM models directly.
-
----
-
-## ADR-007 — Layered Architecture with Dependency Inversion at Service/Adapter boundary
-
-**Decision:** Strict Layered architecture; `ExtractionService` and `RetrievalService` receive adapter instances via constructor injection (manual injection, no DI container).
-
-**Context:** Module boundary design (M2.9).
-
-**Pattern baseline:** `patterns.md` → Module Boundaries.
-
-**Rationale:** The two external I/O dependencies (Anthropic API, sentence-transformers) must be injectable to keep services unit-testable. This directly enables testing assumption H3 (extraction precision) — the highest-risk assumption in the project — with a mock LLM adapter.
-
-**Reversibility:** Easy.
-
-**Consequences:** Route handlers instantiate adapters and inject them into services. No DI container at MVP (YAGNI).
-
+**Phase 3 note:** When methods corpus exceeds ~200 entries, enable `pgvector` extension and migrate `embedding_json JSONB` to `embedding vector(384)`. The `MethodRepository` is the only code change; the migration is a single `ALTER TABLE` + `CREATE INDEX ... USING ivfflat`.

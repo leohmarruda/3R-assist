@@ -4,16 +4,13 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import ParameterField from '../components/ParameterField'
 import {
+  DISPLAY_FIELDS,
   emptyParameterKeys,
+  MATCHING_FIELDS,
   normalizeFieldConfidence,
-  PARAMETER_FIELDS,
+  normalizeParams,
+  serializeParams,
 } from '../lib/protocol'
-
-function normalizeParams(params) {
-  return Object.fromEntries(
-    PARAMETER_FIELDS.map(({ key }) => [key, params?.[key] ?? '']),
-  )
-}
 
 export default function ParametersPage() {
   const { t } = useTranslation()
@@ -42,13 +39,36 @@ export default function ParametersPage() {
   function handleSearch() {
     navigate('/resultados', {
       state: {
-        params,
+        params: serializeParams(params),
         protocolText: analysis.protocolText,
         lang: analysis.lang,
         confidence: analysis.confidence,
         fieldConfidence,
+        rawTextExcerpt: analysis.rawTextExcerpt,
+        isMock: analysis.isMock,
       },
     })
+  }
+
+  function renderFields(fields) {
+    return fields.map(
+      ({ key, labelKey, type, options, enumPrefix, hintKey, allowEmpty }) => (
+        <ParameterField
+          key={key}
+          id={`param-${key}`}
+          labelKey={labelKey}
+          type={type}
+          options={options}
+          enumPrefix={enumPrefix}
+          hintKey={hintKey}
+          allowEmpty={allowEmpty}
+          value={params[key]}
+          onChange={(value) => updateField(key, value)}
+          incomplete={incompleteKeys.has(key)}
+          confidence={fieldConfidence[key]}
+        />
+      ),
+    )
   }
 
   return (
@@ -66,7 +86,7 @@ export default function ParametersPage() {
         </Link>
       </div>
 
-      <header className="mb-section-gap">
+      <header className="mb-card-gap">
         <h1 className="font-headline-lg text-headline-lg text-primary">
           {t('s2.title')}
         </h1>
@@ -75,18 +95,31 @@ export default function ParametersPage() {
         </p>
       </header>
 
-      <section className="space-y-card-gap rounded-lg border border-border-subtle bg-surface-container-lowest p-container-padding">
-        {PARAMETER_FIELDS.map(({ key, labelKey }) => (
-          <ParameterField
-            key={key}
-            id={`param-${key}`}
-            labelKey={labelKey}
-            value={params[key]}
-            onChange={(value) => updateField(key, value)}
-            incomplete={incompleteKeys.has(key)}
-            confidence={fieldConfidence[key]}
-          />
-        ))}
+      <div className="space-y-section-gap">
+        <section className="space-y-card-gap rounded-lg border border-border-subtle bg-surface-container-lowest p-container-padding">
+          {analysis.rawTextExcerpt && (
+            <p className="rounded-lg border border-border-subtle bg-surface-container-low px-card-gap py-3 font-metadata text-metadata text-on-secondary-container">
+              <span className="font-medium text-on-surface">
+                {t('s2.excerptLabel')}:{' '}
+              </span>
+              {analysis.rawTextExcerpt}
+            </p>
+          )}
+
+          <div className="space-y-card-gap">
+            <h2 className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+              {t('s2.displaySection')}
+            </h2>
+            {renderFields(DISPLAY_FIELDS)}
+          </div>
+
+          <div className="space-y-card-gap">
+            <h2 className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+              {t('s2.matchingSection')}
+            </h2>
+            {renderFields(MATCHING_FIELDS)}
+          </div>
+        </section>
 
         {incompleteKeys.size > 0 && (
           <p
@@ -96,7 +129,7 @@ export default function ParametersPage() {
             {t('s2.incompleteWarning')}
           </p>
         )}
-      </section>
+      </div>
 
       <div className="mt-section-gap flex justify-end">
         <Button type="button" onClick={handleSearch}>

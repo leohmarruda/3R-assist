@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import ProtocolTextarea, { MIN_LENGTH } from '../components/ProtocolTextarea'
-import { DEFAULT_PROTOCOL_TEXT } from '../lib/defaultProtocolText'
+import {
+  MOCK_ANALYZE_RESPONSE,
+  MOCK_PROTOCOL_TEXT,
+} from '../lib/mockAnalyzeResponse'
 
 export default function AnalyzePage({ onSubmit }) {
   const { t, i18n } = useTranslation()
@@ -11,9 +14,7 @@ export default function AnalyzePage({ onSubmit }) {
   const location = useLocation()
   const restored = location.state
 
-  const [protocolText, setProtocolText] = useState(
-    restored?.protocolText ?? DEFAULT_PROTOCOL_TEXT,
-  )
+  const [protocolText, setProtocolText] = useState(restored?.protocolText ?? '')
   const [lang, setLang] = useState(restored?.lang ?? 'en')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -24,6 +25,24 @@ export default function AnalyzePage({ onSubmit }) {
 
   const trimmedLength = protocolText.trim().length
   const canSubmit = trimmedLength >= MIN_LENGTH && !submitting
+
+  function handleMock() {
+    if (submitting) return
+
+    setError(null)
+    setProtocolText(MOCK_PROTOCOL_TEXT)
+    navigate('/parameters', {
+      state: {
+        params: MOCK_ANALYZE_RESPONSE.params,
+        confidence: MOCK_ANALYZE_RESPONSE.confidence,
+        fieldConfidence: MOCK_ANALYZE_RESPONSE.field_confidence,
+        rawTextExcerpt: MOCK_ANALYZE_RESPONSE.raw_text_excerpt,
+        protocolText: MOCK_PROTOCOL_TEXT,
+        lang,
+        isMock: true,
+      },
+    })
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -36,11 +55,12 @@ export default function AnalyzePage({ onSubmit }) {
         protocolText: protocolText.trim(),
         lang,
       })
-      navigate('/parametros', {
+      navigate('/parameters', {
         state: {
           params: result.params,
           confidence: result.confidence,
           fieldConfidence: result.field_confidence,
+          rawTextExcerpt: result.raw_text_excerpt,
           protocolText: protocolText.trim(),
           lang,
         },
@@ -83,7 +103,15 @@ export default function AnalyzePage({ onSubmit }) {
           </p>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-card-gap">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleMock}
+            disabled={submitting}
+          >
+            {t('s1.mock')}
+          </Button>
           <Button type="submit" disabled={!canSubmit}>
             {submitting ? t('s1.submitting') : t('s1.submit')}
             {!submitting && <span aria-hidden="true">→</span>}

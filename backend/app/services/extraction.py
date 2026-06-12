@@ -14,4 +14,5 @@ class ExtractionService:
             params=result.params,
             confidence=result.confidence,
             field_confidence=result.field_confidence,
+            raw_text_excerpt=result.raw_text_excerpt,
         )

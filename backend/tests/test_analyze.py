@@ -1,14 +1,19 @@
 from fastapi.testclient import TestClient
 
 from app.adapters.llm import StubLLMAdapter
-from app.api.deps import get_extraction_service
+from app.api.deps import get_extraction_service, get_retrieval_service
 from app.main import create_app
 from app.services.extraction import ExtractionService
 
 SAMPLE_TEXT = (
-    "We used Wistar rats to assess acute oral toxicity with a mortality endpoint "
-    "under OECD regulatory testing."
+    "Acute toxicity LD50 study with 60 male Wistar rats; single dose via "
+    "oral gavage and intraperitoneal injection; OECD regulatory testing."
 )
+
+
+class _EmptyRetrieval:
+    async def search(self, _params):
+        return [], None
 
 
 def test_analyze_returns_parameters():
@@ -16,6 +21,7 @@ def test_analyze_returns_parameters():
     app.dependency_overrides[get_extraction_service] = lambda: ExtractionService(
         llm=StubLLMAdapter()
     )
+    app.dependency_overrides[get_retrieval_service] = lambda: _EmptyRetrieval()
     client = TestClient(app)
 
     response = client.post("/analyze", json={"protocol_text": SAMPLE_TEXT, "lang": "en"})
@@ -23,13 +29,18 @@ def test_analyze_returns_parameters():
     assert response.status_code == 200
     data = response.json()
     assert data["confidence"] in {"high", "medium", "low"}
-    assert data["params"]["biological_model"] is not None
-    assert data["field_confidence"]["biological_model"] == "high"
-    assert data["field_confidence"]["endpoint"] == "high"
+    assert data["params"]["endpoint_category"] == "acute_toxicity"
+    assert data["params"]["route"] == ["oral", "intraperitoneal"]
+    assert data["params"]["species"] == "rat"
+    assert data["params"]["n_animals"] == 60
+    assert data["params"]["regulatory"] is True
+    assert data["field_confidence"]["endpoint_category"] == "high"
+    assert data["recommendations"] == []
 
 
 def test_analyze_rejects_short_text():
     app = create_app()
+    app.dependency_overrides[get_retrieval_service] = lambda: _EmptyRetrieval()
     client = TestClient(app)
 
     response = client.post("/analyze", json={"protocol_text": "too short"})
@@ -42,6 +53,7 @@ def test_analyze_extraction_failed_envelope():
     app.dependency_overrides[get_extraction_service] = lambda: ExtractionService(
         llm=StubLLMAdapter()
     )
+    app.dependency_overrides[get_retrieval_service] = lambda: _EmptyRetrieval()
     client = TestClient(app)
 
     response = client.post(

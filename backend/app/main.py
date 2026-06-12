@@ -9,21 +9,23 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.api.errors import unhandled_exception_handler
-from app.api.routes import analysis, health
+from app.api.routes import admin, analysis, health
 from app.config import get_settings
-from app.db.connection import init_db
+from app.db.connection import close_pool, create_pool
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # CRUCIAL: Só tenta inicializar o banco local se NÃO estiver no Vercel
-    # Evita travar o container read-only com escritas do SQLite local
-    if os.getenv("VERCEL") is None:
+    pool = None
+    if get_settings().database_url:
         try:
-            init_db()
+            pool = await create_pool()
+            _app.state.db_pool = pool
         except Exception as e:
-            print(f"Erro ao inicializar banco local: {e}")
+            print(f"Database pool unavailable: {e}")
     yield
+    if pool is not None:
+        await close_pool()
 
 
 def create_app() -> FastAPI:
@@ -51,6 +53,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(analysis.router)
+    app.include_router(admin.router)
 
     return app
 

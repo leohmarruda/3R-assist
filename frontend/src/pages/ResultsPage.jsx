@@ -17,7 +17,7 @@ export default function ResultsPage() {
     <main className="mx-auto w-full max-w-content flex-1 px-container-padding py-section-gap">
       <div className="mb-card-gap">
         <Link
-          to="/parametros"
+          to="/parameters"
           state={location.state}
           className="font-nav-link text-nav-link text-on-secondary-container transition-colors hover:text-primary"
         >

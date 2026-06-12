@@ -2,7 +2,18 @@
   "nav": {
     "analyze": "Analisar",
     "search": "Buscar",
+    "admin": "Admin",
     "signIn": "Entrar"
+  },
+  "admin": {
+    "title": "Administração do banco",
+    "subtitle": "Navegue pelas tabelas públicas do PostgreSQL.",
+    "tabsLabel": "Tabelas do banco",
+    "loading": "Carregando…",
+    "loadError": "Não foi possível carregar os dados de administração.",
+    "noTables": "Nenhuma tabela encontrada.",
+    "emptyTable": "Esta tabela não possui registros.",
+    "rowCount": "Exibindo {{shown}} de {{total}} registros"
   },
   "s1": {
     "title": "Descreva seu protocolo experimental",
@@ -11,6 +22,7 @@
     "placeholder": "Utilizamos camundongos Wistar para avaliar a toxicidade aguda por via oral…",
     "submit": "Analisar protocolo",
     "submitting": "Analisando…",
+    "mock": "Demonstração",
     "searchLink": "Já sabe o que procura?",
     "searchLinkAction": "Busca direta",
     "anonymous": "Continuar sem conta (anônimo) — histórico disponível após cadastro",
@@ -23,18 +35,70 @@
     "backToEdit": "Editar protocolo",
     "backToParams": "Voltar aos parâmetros",
     "searchCta": "Buscar alternativas",
-    "incompleteWarning": "Campos incompletos podem reduzir a precisão da busca.",
+    "incompleteWarning": "A categoria de endpoint é obrigatória antes da busca.",
+    "excerptLabel": "Trecho de origem",
+    "matchingSection": "Parâmetros de matching",
+    "displaySection": "Contexto de exibição",
+    "emptyOption": "— Não especificado —",
+    "boolean": {
+      "yes": "Sim",
+      "no": "Não"
+    },
+    "hints": {
+      "route": "oral, intraperitoneal",
+      "procedureText": "Descrição breve em inglês usada no matching semântico (máx. ~30 palavras)."
+    },
     "confidence": {
       "high": "Alta confiança",
       "medium": "Confiança média",
       "low": "Baixa confiança"
     },
     "fields": {
-      "biologicalModel": "Modelo biológico",
-      "objective": "Objetivo",
-      "procedure": "Procedimento",
-      "endpoint": "Endpoint",
-      "applicationArea": "Área de aplicação"
+      "endpointCategory": "Categoria de endpoint",
+      "route": "Via de administração",
+      "applicationArea": "Área de aplicação",
+      "procedureText": "Texto do procedimento",
+      "species": "Espécie",
+      "nAnimals": "Número de animais",
+      "regulatory": "Contexto regulatório"
+    },
+    "enums": {
+      "endpointCategory": {
+        "acute_toxicity": "Toxicidade aguda",
+        "skin_irritation": "Irritação cutânea",
+        "skin_corrosion": "Corrosão cutânea",
+        "ocular_irritation": "Irritação ocular",
+        "skin_sensitisation": "Sensibilização cutânea",
+        "phototoxicity": "Fototoxicidade",
+        "genotoxicity": "Genotoxicidade",
+        "pyrogenicity": "Pirogenicidade",
+        "skin_absorption": "Absorção cutânea"
+      },
+      "route": {
+        "oral": "Oral",
+        "intraperitoneal": "Intraperitoneal",
+        "intravenous": "Intravenosa",
+        "dermal": "Dérmica",
+        "ocular": "Ocular",
+        "inhalation": "Inalação",
+        "in_vitro": "In vitro"
+      },
+      "applicationArea": {
+        "pharma": "Farmacêutica",
+        "cosmetics": "Cosméticos",
+        "chemical_safety": "Segurança química",
+        "general": "Pesquisa geral"
+      },
+      "species": {
+        "rat": "Rato",
+        "mouse": "Camundongo",
+        "rabbit": "Coelho",
+        "guinea_pig": "Cobaia",
+        "chicken": "Galinha",
+        "zebrafish": "Peixe-zebra",
+        "in_vitro": "In vitro",
+        "other": "Outra"
+      }
     }
   },
   "s3": {
