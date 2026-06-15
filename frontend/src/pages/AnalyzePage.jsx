@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import ProtocolTextarea, { MIN_LENGTH } from '../components/ProtocolTextarea'
+import { buildAnalysisState } from '../lib/analyze'
 import {
   MOCK_ANALYZE_RESPONSE,
   MOCK_PROTOCOL_TEXT,
@@ -32,15 +33,11 @@ export default function AnalyzePage({ onSubmit }) {
     setError(null)
     setProtocolText(MOCK_PROTOCOL_TEXT)
     navigate('/parameters', {
-      state: {
-        params: MOCK_ANALYZE_RESPONSE.params,
-        confidence: MOCK_ANALYZE_RESPONSE.confidence,
-        fieldConfidence: MOCK_ANALYZE_RESPONSE.field_confidence,
-        rawTextExcerpt: MOCK_ANALYZE_RESPONSE.raw_text_excerpt,
+      state: buildAnalysisState(MOCK_ANALYZE_RESPONSE, {
         protocolText: MOCK_PROTOCOL_TEXT,
         lang,
         isMock: true,
-      },
+      }),
     })
   }
 
@@ -56,14 +53,10 @@ export default function AnalyzePage({ onSubmit }) {
         lang,
       })
       navigate('/parameters', {
-        state: {
-          params: result.params,
-          confidence: result.confidence,
-          fieldConfidence: result.field_confidence,
-          rawTextExcerpt: result.raw_text_excerpt,
+        state: buildAnalysisState(result, {
           protocolText: protocolText.trim(),
           lang,
-        },
+        }),
       })
     } catch (err) {
       setError(err.message ?? 'Request failed')

@@ -35,8 +35,18 @@
     "backToEdit": "Edit protocol",
     "backToParams": "Back to parameters",
     "searchCta": "Search alternatives",
-    "incompleteWarning": "Endpoint category is required before searching.",
-    "excerptLabel": "Source excerpt",
+    "searching": "Searching…",
+    "incompleteWarning": "Application area is required before searching.",
+    "identificationSection": "Study identification",
+    "protocolSourceLabel": "Original protocol",
+    "protocolHighlightLegend": "Highlighted = extraction evidence",
+    "endpointNotCovered": "Not covered by database",
+    "multiExperimentHint": "{{count}} experiments detected — select a tab to review and search.",
+    "experimentTabsLabel": "Detected experiments",
+    "experimentTab": "Experiment {{number}}",
+    "notesLabel": "Extraction notes",
+    "showEvidence": "Show evidence",
+    "hideEvidence": "Hide evidence",
     "matchingSection": "Matching parameters",
     "displaySection": "Display context",
     "emptyOption": "— Not specified —",
@@ -48,19 +58,33 @@
       "route": "oral, intraperitoneal",
       "procedureText": "Brief English description used for semantic matching (max ~30 words)."
     },
-    "confidence": {
-      "high": "High confidence",
-      "medium": "Medium confidence",
-      "low": "Low confidence"
+    "fieldConfidence": {
+      "level": {
+        "high": "High certainty",
+        "medium": "Medium certainty",
+        "low": "Low certainty"
+      },
+      "hint": {
+        "high": "Evidence directly states this value",
+        "medium": "Value inferred from evidence — review recommended",
+        "low": "Weak or tangential evidence — verify this field"
+      }
     },
     "fields": {
-      "endpointCategory": "Endpoint category",
+      "studyType": "Study type (extracted)",
+      "endpointCategory": "Endpoint category (database)",
       "route": "Route",
       "applicationArea": "Application area",
       "procedureText": "Procedure text",
       "species": "Species",
-      "nAnimals": "Number of animals",
-      "regulatory": "Regulatory context"
+      "regulatory": "Regulatory context",
+      "animalCounts": {
+        "label": "Animal counts",
+        "female": "Females",
+        "male": "Males",
+        "total": "Total",
+        "perGroup": "Per group"
+      }
     },
     "enums": {
       "endpointCategory": {
@@ -102,16 +126,36 @@
     }
   },
   "s3": {
-    "extractedParameters": "Extracted parameters",
-    "recommendedAlternatives": "Recommended Alternatives",
-    "summaryRecommendation": "Summary Recommendation",
-    "colParameter": "Parameter",
-    "colValue": "Value",
-    "colMethod": "Method Name",
-    "colValidation": "Validation Status",
-    "colSpecies": "Species Replaced",
-    "colEndpoint": "Endpoint Type",
-    "colSource": "Source",
+    "title": "Alternative methods",
+    "subtitle": "Ranked by relevance to your confirmed parameters.",
+    "multiExperimentHint": "{{count}} experiments detected — select a tab to view results for each.",
+    "experimentTabsLabel": "Experiment results",
+    "protocolSummary": "Protocol summary",
+    "recommendedAlternatives": "Recommended alternatives",
+    "matchedParams": "Matched parameters",
+    "matchLabel": "Match",
+    "sourceLink": "Primary source",
+    "regulatoryLink": "OECD / regulatory",
+    "filterThreeR": "3Rs class",
+    "filterJurisdiction": "Jurisdiction",
+    "filterAll": "All",
+    "emptyNoEndpoint": "This study type is not covered by the current method database. No recommendations are available.",
+    "emptyNoMethods": "No active methods matched your parameters. Methods may still be pending review in the database.",
+    "emptyFiltered": "No methods match the selected filters. Try clearing filters.",
+    "filterRelaxation": {
+      "route_filter_relaxed": "Fewer than three methods matched your route — results include methods with other applicable routes.",
+      "endpoint_and_route_filters_relaxed": "Fewer than three methods matched your endpoint and route — results include the closest available methods."
+    },
+    "jurisdiction": {
+      "brazil": "Brazil",
+      "international": "International",
+      "both": "Brazil / International"
+    },
+    "validationStatus": {
+      "validated": "Validated",
+      "accepted": "Accepted",
+      "emerging": "Emerging"
+    },
     "threeR": {
       "replacement": "Replacement",
       "reduction": "Reduction",

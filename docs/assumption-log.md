@@ -9,7 +9,7 @@ Updated at: M1.5 (initial), M2 Phase A checkpoint, M3.4, M4, M5.
 
 | # | Assumption | Why it matters | How to test cheaply | Status |
 |---|---|---|---|---|
-| H1 | Users can describe experimental protocols in free text in a way that yields useful parameters without structured prompting | If false, the free-text input path fails and a guided form becomes necessary — a fundamental architecture change | Ask 5 researchers to describe a real protocol in free text; verify whether biological model, endpoint, and procedure appear without prompting | Untested |
+| H1 | Users can describe experimental protocols in free text in a way that yields useful parameters without structured prompting | If false, the free-text input path fails and a guided form becomes necessary — a fundamental architecture change | Ask 5 researchers to describe a real protocol in free text; verify whether biological model, endpoint, and procedure appear without prompting. **Additional metric (ADR-014):** log `len(experiments) > 1` per session — if ≥2/5 sessions produce multiple experiments, multi-experiment S2/S3 UI must be pulled forward from Phase 3 to Phase 2 with explicit equivalent deferral | Untested |
 | H2 | ALT Web, ECVAM, and OECD together provide sufficient and accessible data to cover common Brazilian CEUA endpoints | If coverage is low or access is blocked, the MVP has no viable database | Manually check 10 representative protocols against these sources and count matches; verify terms of use for permitted automation | **Partially addressed** — see note |
 | H3 | LLM-based text analysis can extract experimental parameters with sufficient precision for relevant retrieval | If extraction is imprecise, recommendations are irrelevant — this is the core product risk | Build a minimal prototype (prompt + 20 seed records) and test with 5 real protocols; measure precision | Untested |
 | H4 | Researchers trust recommendations when primary-source traceability is provided | If false, the tool is unusable in any regulatory or ethics-committee context | Show 3 potential users a mockup with recommendation + reference; ask "would you cite this in an ethics submission?" | Untested |
@@ -37,3 +37,4 @@ Updated at: M1.5 (initial), M2 Phase A checkpoint, M3.4, M4, M5.
 |---|---|---|
 | *(bootstrap)* | M0 | Initialized from `project-proposal.md` section 13 |
 | M3 Database | M3 | H2 and H5 status updated to "Partially addressed"; notes added with remaining steps to reach Tested |
+| ADR-014 | pre-Phase 1 | H1 test description updated: added `len(experiments) > 1` pilot metric per ADR-014 |

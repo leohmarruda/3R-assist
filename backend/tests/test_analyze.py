@@ -35,7 +35,6 @@ def test_analyze_returns_parameters():
     assert data["params"]["n_animals"] == 60
     assert data["params"]["regulatory"] is True
     assert data["experiments"][0]["raw"]["study_type"]
-    assert data["recommendations"] == []
 
 
 def test_analyze_rejects_short_text():

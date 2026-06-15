@@ -138,5 +138,25 @@ class ExperimentResult(BaseModel):
 class AnalyzeResponse(BaseModel):
     experiments: list[ExperimentResult] = Field(..., min_length=1)
     params: ProtocolParameters
-    recommendations: list[Recommendation] = Field(default_factory=list)
+
+
+ThreeRClass = Literal["replacement", "reduction", "refinement"]
+JurisdictionFilter = Literal["brazil", "international", "both"]
+
+
+class SearchFilters(BaseModel):
+    three_r_class: ThreeRClass | None = None
+    jurisdiction: JurisdictionFilter | None = None
+    endpoint: EndpointCategory | None = None
+
+
+class SearchRequest(BaseModel):
+    params: ProtocolParameters
+    filters: SearchFilters | None = None
+    lang: Literal["pt", "en"] | None = None
+
+
+class SearchResponse(BaseModel):
+    query_id: int | None = None
+    results: list[Recommendation] = Field(default_factory=list)
     filter_relaxation: str | None = None

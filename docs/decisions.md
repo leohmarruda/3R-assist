@@ -256,3 +256,149 @@ All compressions applied must be documented in `execution-log.md`.
 - ADR-004 marked superseded; Turso dependency removed from `requirements.txt`.
 
 **Phase 3 note:** When methods corpus exceeds ~200 entries, enable `pgvector` extension and migrate `embedding_json JSONB` to `embedding vector(384)`. The `MethodRepository` is the only code change; the migration is a single `ALTER TABLE` + `CREATE INDEX ... USING ivfflat`.
+
+---
+
+## ADR-014 — `POST /analyze` response: array output (`experiments[]`) + `notes` field
+
+**Decision:** `POST /analyze` returns `AnalyzeResponse { experiments: ExtractionResult[] }` (min length 1) instead of a single `ExtractionResult`. Each `ExtractionResult` gains a `notes: Optional[str]` field. Phase 1 routes only `experiments[0]` to S2 / RetrievalService / QueryRepository. Full multi-experiment UI deferred to Phase 3 (bundled with F17 side-by-side comparison).
+
+**Context:** Two published Materials & Methods sections processed during spec validation each described multiple distinct studies (acute LD50 + 28-day subacute; 90-day inhalation + recovery cohort). The prior single-object schema either silently dropped secondary studies or forced a false endpoint_category onto a composite protocol. The change was surfaced before Phase 1 implementation, making this the correct point to adjust the contract.
+
+**Pattern baseline:** `patterns.md` → API Design (define the contract before writing any handler code); YAGNI check passed — the array shape resolves a demonstrated real-world failure mode, not an anticipated one.
+
+**Alternatives evaluated:**
+
+| Option | Reason not chosen |
+|---|---|
+| Single `ExtractionResult` + boolean `additional_experiments_detected` | Discards structured data for secondary experiments; `notes` alone cannot represent a second endpoint_category + route + n_animals cleanly |
+| Full multi-experiment S2/S3 now (parallel searches, tabbed results) | Unvalidated scope expansion against hard rule; H1/H3 are still the binding risks; Phase 1 hasn't started |
+
+**Rationale:** Array shape is cheap to implement correctly once at the contract level and avoids a second breaking change in Phase 3. `notes` is display-only (no matching logic), zero retrieval cost, and directly resolves the gap where secondary experiments and unsupported routes (inhalation, repeated-dose) were silently dropped. Deferral of multi-experiment UI to Phase 3 is the explicit scope trade-off required by the hard rule (no additions without equivalent deferral).
+
+**Reversibility:** Moderate — frontend and backend must change together; downstream `QueryRepository.save(extracted_params)` must store `experiments[0]` only until Phase 3.
+
+**Consequences:**
+- `app/domain/extraction.py`: `ExtractionResult` gains `notes` field; new `AnalyzeResponse` dataclass wraps `experiments: list[ExtractionResult]`.
+- `app/adapters/llm.py`: prompt updated to output `{ "experiments": [...] }` array; segmentation logic added.
+- `app/api/routes/analysis.py`: response serialization updated to `AnalyzeResponse`.
+- `app/repositories/queries.py`: `QueryRepository.save()` stores `experiments[0].params` in `queries.extracted_params`; full `experiments` array stored in `queries.results_snapshot` for pilot analysis.
+- Frontend S2: render `experiments[0]`; add non-blocking banner when `len > 1`; display `notes` when non-null.
+- `docs/parameter_model.md` §4, §9, §11 updated (see revision history).
+- `spec.md` §2.11 `POST /analyze` contract and F02/F03 feature descriptions updated.
+- **Pilot metric added to `assumption-log.md` H1:** log `len(experiments) > 1` occurrences per session. If ≥2/5 pilot sessions produce multiple experiments, pull multi-experiment UI forward from Phase 3 to Phase 2 with explicit equivalent deferral.
+
+**Revision (ADR-019):** Multi-experiment tabs on S2/S3 and per-experiment search are now implemented in Phase 1. The banner-only S2 behaviour described above is superseded. Side-by-side comparison (F17) remains deferred to Phase 3.
+
+---
+
+## ADR-015 — Two-stage extraction: `study_type` (LLM) → `endpoint_category` (application code)
+
+**Decision:** The LLM no longer writes `endpoint_category`. Instead it writes `study_type` as a free-text string describing what kind of study the protocol is. Application code maps `study_type` → `endpoint_category` via a lookup table maintained in `docs/parameter_model.md §4.1`. No second LLM call — single API call, same cost.
+
+**Context:** Test set of 8 real protocol extractions showed that asking the LLM to simultaneously identify the study type AND map it to a 9-value controlled vocabulary was the primary failure mode. Protocols clearly described as "prenatal developmental toxicity study" (OECD TG 414) returned `null` after LLM uncertainty, when the correct output was `null` (not in vocabulary) — but the reasoning path was obscured. Separating identification from classification makes misses explicit (log all `study_type` strings that don't hit the lookup) and makes the lookup table extensible without prompt changes.
+
+**Pattern baseline:** `patterns.md` → Anti-Corruption Layer. The lookup table is the ACL between LLM free text and the domain's controlled vocabulary.
+
+**Alternatives considered:** Two API calls (extract then classify) — rejected: doubles latency and cost. Expanding the vocabulary to cover all observed gaps now — rejected: YAGNI; gaps must be validated by Karynn's H2 check before committing database entries.
+
+**Reversibility:** Easy — lookup table is a dict; adding rows has no downstream impact.
+
+**Consequences:**
+- `app/adapters/llm.py`: prompt updated; LLM output no longer contains `endpoint_category` or `confidence`.
+- `app/services/extraction.py`: `ExtractionService` runs lookup after LLM call; computes `confidence` via §4.2.
+- `docs/parameter_model.md §4.1`: lookup table owned here; Karynn can extend alongside methods DB.
+- S2 frontend: displays `study_type` (LLM free text) and `endpoint_category` (lookup result) side by side. "Not covered by database" shown when `endpoint_category` is null.
+- All missed `study_type` values logged for H2 gap analysis.
+
+---
+
+## ADR-016 — Evidence field paired with every extracted value; `raw_text_excerpt` removed
+
+**Decision:** Every field in `RawExtraction` has a paired `{field}_evidence: Optional[str]` containing the exact text excerpt that supports the extracted value. The LLM must return `null` for a field (not an inference) when it cannot cite explicit text evidence. `raw_text_excerpt` (previously a single string for the whole object) is removed.
+
+**Context:** `raw_text_excerpt` was tied only to `endpoint_category` and covered only one field. High-risk inference fields (`regulatory`, `animal_counts`, `route`) had no evidence requirement, enabling hallucination. Requiring evidence per field is the highest-leverage single change for extraction reliability — models become measurably more conservative when forced to cite.
+
+**Pattern baseline:** `patterns.md` → Error Handling (typed returns, not exceptions). Evidence fields make the extraction auditable: a null evidence string on a non-null field is a detectable anomaly.
+
+**Reversibility:** Easy — evidence fields are additive; removing them is a prompt change.
+
+**Consequences:**
+- LLM output token count increases ~30–40%. Acceptable at Sonnet pricing and sub-cent-per-query cost baseline.
+- `app/adapters/llm.py`: prompt updated with evidence requirement per field.
+- `app/domain/extraction.py`: `RawExtraction` dataclass gains `{field}_evidence` fields; `raw_text_excerpt` removed.
+- S2 frontend: "show evidence" toggle per field reveals the evidence string. Toggle is collapsed by default — evidence behind, not inline.
+- Pilot metric: log null evidence rate per field. Fields with consistently null evidence despite non-null values indicate prompt ambiguity.
+
+---
+
+## ADR-017 — `n_animals` replaced by `AnimalCounts`; `confidence` computed in application code
+
+**Decision (n_animals):** `n_animals: Optional[int]` replaced by `animal_counts: Optional[AnimalCounts]` with subfields `female`, `male`, `total`, `per_group` (all `Optional[int]`). LLM populates only subfields explicitly stated in the text; derivation (e.g. female + male = total) is prohibited under ADR-016 strict extraction mode.
+
+**Decision (confidence):** `confidence` removed from LLM output. `ExtractionService` computes it after the `endpoint_category` lookup per §4.2. Rule: `low` if `endpoint_category` is null; `high` if ≥4 non-null non-default fields; `medium` otherwise.
+
+**Context:** `n_animals` as a single integer failed on every multi-cohort protocol in the test set (100F + 60M in D-allulose; generational counts in benzophenone; slaughterhouse-derived corneas in EVEIT). Self-graded `confidence` was redundant once the schema is well-defined and introduced sycophancy risk (models tend to self-grade as high).
+
+**Reversibility:** Easy for confidence (revert to LLM-generated, log comparison). Moderate for animal_counts (schema change requires migration of `queries.extracted_params` JSONB if already in production — not an issue pre-Phase 1).
+
+**Consequences:**
+- `app/domain/extraction.py`: `AnimalCounts` dataclass added; `ExtractionResult.confidence` set by service, not adapter.
+- `app/adapters/llm.py`: `n_animals` removed from prompt; `animal_counts` object added; `confidence` removed from prompt.
+- `app/services/extraction.py`: `compute_confidence()` function added.
+- S2 frontend: animal counts displayed as structured object (female / male / total / per group) rather than a single integer field.
+- Pilot: after F11 feedback collected, compare computed confidence against researcher relevance ratings to validate §4.2 threshold.
+
+---
+
+## ADR-018 — Per-field confidence replaces overall extraction confidence
+
+**Decision:** Confidence is **per-field only**. `RawExtraction` gains a `{field}_confidence: Optional[Literal["high","medium","low"]]` for every extracted field. The LLM outputs it alongside the evidence string. Each value answers: *how certain is this parameter given the evidence for that specific field?* There is no overall `ExtractionResult.confidence` or retrieval-level aggregate.
+
+**Context:** The EVEIT extraction exposed the gap: route has a direct quote ("applied exactly over the apex of the cornea" → ocular), animal_counts is null (not extracted), and application_area requires interpretation (general, by rule rather than by explicit statement). A single aggregate score communicates none of this. The per-field signal is the actionable one for S2 — it tells the user which fields to scrutinize.
+
+**Per-field confidence scale (LLM-generated, bounded):**
+- `"high"` — the evidence string is an explicit, direct statement of the value with no interpretation required (e.g., "p.o." → oral; "60 male Wistar rats" → species rat, male 60)
+- `"medium"` — the evidence requires vocabulary mapping or mild inference (e.g., "intragastric administration" → oral; "following OECD guidelines 414" → regulatory True)
+- `"low"` — the value is present but evidence is tangential or required significant interpretation; flag for user review
+- `null` — field is null; confidence not applicable
+
+**S2 display:**
+- Per-field rows: `{field}_confidence` badge (High / Medium / Low) on the left; "show evidence" toggle on the right.
+- No header-level confidence badge (supersedes ADR-010 aggregate display for extraction).
+
+**Pattern baseline:** `patterns.md` → Error Handling. Per-field confidence makes each extraction value independently auditable. A null `field_evidence` on a non-null field (ADR-016 violation) is detectable as `confidence = "low"` on that field.
+
+**Alternatives considered:** Programmatic per-field confidence from evidence presence alone (non-null evidence → high, null evidence → low) — rejected: too binary; doesn't distinguish direct synonym match from interpreted inference, which is the useful signal. Aggregate retrieval confidence from matching fields — rejected: conflates field-level certainty with search relevance; user clarified confidence is about parameter certainty given evidence, not overall. Remove confidence entirely — rejected: S2 needs to direct user attention to fields requiring scrutiny.
+
+**Reversibility:** Moderate — schema change to `RawExtraction`; prompt update; S2 frontend per-field indicator; removal of `ExtractionResult.confidence` from API.
+
+**Consequences:**
+- `app/models/protocol.py`: `{field}_confidence` on `RawExtraction`; `ExtractionResult.confidence` removed.
+- `app/adapters/llm.py`: prompt updated — per-field confidence included in output alongside evidence, with 3-value scale and criteria.
+- S2 frontend: per-field confidence indicator per row (collapsed with evidence); header badge removed.
+- `docs/parameter_model.md` §4 and §9 updated.
+
+---
+
+## ADR-019 — Separate `POST /search` from extraction; multi-experiment tabs on S2/S3
+
+**Decision:** `POST /analyze` returns extraction only (`experiments[]` + primary `params`). Retrieval runs on a new `POST /search` endpoint after the user confirms parameters on S2. When `len(experiments) > 1`, S2 and S3 show experiment tabs; clicking "Search alternatives" on S2 runs `POST /search` for **all** experiments in parallel and navigates to S3 with per-experiment result sets.
+
+**Context:** Early implementation bundled retrieval into `/analyze`, which violated workflow W1 (search must use **confirmed** params). S2 showed only a non-blocking banner for secondary experiments (ADR-014 deferral). Pilot prep and the Parthenium test fixture demonstrated that researchers need to review and search each detected study independently.
+
+**Alternatives considered:**
+
+| Option | Reason not chosen |
+|---|---|
+| Keep retrieval on `/analyze` | Ignores S2 edits; wrong timing in W1 |
+| Search only the active S2 tab | Secondary experiments silently skipped on S3 |
+| Full side-by-side comparison (F17) | Out of scope; tabs sufficient for Phase 1 |
+
+**Consequences:**
+- `app/api/routes/search.py`: `POST /search` with `SearchRequest { params, filters?, lang? }` → `SearchResponse { query_id, results, filter_relaxation }`.
+- `app/api/routes/analysis.py`: retrieval removed from `/analyze`.
+- Frontend S2: `ExperimentTabs` component; `searchAllExperiments()` on search CTA.
+- Frontend S3: real `ResultCard` list from API (replaces mock assessment report); matching tabs; OECD ref on regulatory link; **Match** label on score.
+- `query_id` returns `null` until Phase 2 query persistence.
+- Supersedes ADR-014 deferral of multi-experiment UI to Phase 3 for S2/S3 tabs (side-by-side comparison remains Phase 3 / F17).

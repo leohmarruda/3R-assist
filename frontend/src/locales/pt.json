@@ -35,8 +35,18 @@
     "backToEdit": "Editar protocolo",
     "backToParams": "Voltar aos parâmetros",
     "searchCta": "Buscar alternativas",
-    "incompleteWarning": "A categoria de endpoint é obrigatória antes da busca.",
-    "excerptLabel": "Trecho de origem",
+    "searching": "Buscando…",
+    "incompleteWarning": "A área de aplicação é obrigatória antes da busca.",
+    "identificationSection": "Identificação do estudo",
+    "protocolSourceLabel": "Protocolo original",
+    "protocolHighlightLegend": "Destacado = evidência da extração",
+    "endpointNotCovered": "Não coberto pelo banco",
+    "multiExperimentHint": "{{count}} experimentos detectados — selecione uma aba para revisar e buscar.",
+    "experimentTabsLabel": "Experimentos detectados",
+    "experimentTab": "Experimento {{number}}",
+    "notesLabel": "Observações da extração",
+    "showEvidence": "Ver evidência",
+    "hideEvidence": "Ocultar evidência",
     "matchingSection": "Parâmetros de matching",
     "displaySection": "Contexto de exibição",
     "emptyOption": "— Não especificado —",
@@ -48,19 +58,33 @@
       "route": "oral, intraperitoneal",
       "procedureText": "Descrição breve em inglês usada no matching semântico (máx. ~30 palavras)."
     },
-    "confidence": {
-      "high": "Alta confiança",
-      "medium": "Confiança média",
-      "low": "Baixa confiança"
+    "fieldConfidence": {
+      "level": {
+        "high": "Alta certeza",
+        "medium": "Certeza média",
+        "low": "Baixa certeza"
+      },
+      "hint": {
+        "high": "A evidência declara este valor diretamente",
+        "medium": "Valor inferido da evidência — revisão recomendada",
+        "low": "Evidência fraca ou tangencial — verifique este campo"
+      }
     },
     "fields": {
-      "endpointCategory": "Categoria de endpoint",
+      "studyType": "Tipo de estudo (extraído)",
+      "endpointCategory": "Categoria de endpoint (banco)",
       "route": "Via de administração",
       "applicationArea": "Área de aplicação",
       "procedureText": "Texto do procedimento",
       "species": "Espécie",
-      "nAnimals": "Número de animais",
-      "regulatory": "Contexto regulatório"
+      "regulatory": "Contexto regulatório",
+      "animalCounts": {
+        "label": "Contagem de animais",
+        "female": "Fêmeas",
+        "male": "Machos",
+        "total": "Total",
+        "perGroup": "Por grupo"
+      }
     },
     "enums": {
       "endpointCategory": {
@@ -102,16 +126,36 @@
     }
   },
   "s3": {
-    "extractedParameters": "Parâmetros extraídos",
+    "title": "Métodos alternativos",
+    "subtitle": "Ordenados por relevância aos parâmetros confirmados.",
+    "multiExperimentHint": "{{count}} experimentos detectados — selecione uma aba para ver os resultados de cada um.",
+    "experimentTabsLabel": "Resultados por experimento",
+    "protocolSummary": "Resumo do protocolo",
     "recommendedAlternatives": "Alternativas recomendadas",
-    "summaryRecommendation": "Recomendação resumida",
-    "colParameter": "Parâmetro",
-    "colValue": "Valor",
-    "colMethod": "Método",
-    "colValidation": "Status de validação",
-    "colSpecies": "Espécie substituída",
-    "colEndpoint": "Tipo de endpoint",
-    "colSource": "Fonte",
+    "matchedParams": "Parâmetros correspondentes",
+    "matchLabel": "Match",
+    "sourceLink": "Fonte primária",
+    "regulatoryLink": "OECD / regulatório",
+    "filterThreeR": "Classe 3R",
+    "filterJurisdiction": "Jurisdição",
+    "filterAll": "Todas",
+    "emptyNoEndpoint": "Este tipo de estudo não está coberto pelo banco de métodos atual. Nenhuma recomendação disponível.",
+    "emptyNoMethods": "Nenhum método ativo correspondeu aos seus parâmetros. Métodos podem estar pendentes de revisão no banco.",
+    "emptyFiltered": "Nenhum método corresponde aos filtros selecionados. Tente limpar os filtros.",
+    "filterRelaxation": {
+      "route_filter_relaxed": "Menos de três métodos corresponderam à via — resultados incluem métodos com outras vias aplicáveis.",
+      "endpoint_and_route_filters_relaxed": "Menos de três métodos corresponderam ao endpoint e à via — resultados incluem os métodos mais próximos disponíveis."
+    },
+    "jurisdiction": {
+      "brazil": "Brasil",
+      "international": "Internacional",
+      "both": "Brasil / Internacional"
+    },
+    "validationStatus": {
+      "validated": "Validado",
+      "accepted": "Aceito",
+      "emerging": "Emergente"
+    },
     "threeR": {
       "replacement": "Substituição",
       "reduction": "Redução",

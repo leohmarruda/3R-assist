@@ -102,3 +102,19 @@ H2 and H5 remain formally Untested in `assumption-log.md` until the structured c
 ---
 
 *M3+ entries added during development.*
+
+## M3+ — Phase 1 core pipeline (extraction → search → results)
+
+**Implemented (2026):**
+
+| Area | Change |
+|---|---|
+| Extraction contract | ADR-015–018 synced: `study_type` → lookup; per-field `{field}_confidence`; `AnimalCounts`; prompt §9 aligned |
+| Lookup table §4.1 | Subacute blocklist; EVEIT / ex vivo eye / BCOP → `ocular_irritation` |
+| Live reliability tests | 9 protocol fixtures; `@pytest.mark.live`; weighted scoring |
+| `POST /search` | ADR-019: retrieval after S2; filter relaxation |
+| `POST /analyze` | Extraction only |
+| S2 UI | Experiment tabs; protocol side panel; per-field confidence + evidence |
+| S3 UI | Live `ResultCard` results; experiment tabs; Match score; OECD on regulatory link |
+
+**Still open for pilot:** methods `active = TRUE`; S3 export/feedback/suggest links; `QueryRepository`; H1/H2/H5 formal checks.

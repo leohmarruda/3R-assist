@@ -18,19 +18,12 @@ def enrich_raw_experiments(raw_list: list[RawExtraction]) -> list[ExtractionResu
     return [enrich_raw_extraction(raw) for raw in raw_list]
 
 
-def build_analyze_response(
-    experiments: list[ExtractionResult],
-    *,
-    recommendations: list | None = None,
-    filter_relaxation: str | None = None,
-) -> AnalyzeResponse:
+def build_analyze_response(experiments: list[ExtractionResult]) -> AnalyzeResponse:
     primary = experiments[0]
     experiment_models = [ExperimentResult.from_extraction(item) for item in experiments]
     return AnalyzeResponse(
         experiments=experiment_models,
         params=to_protocol_parameters(primary),
-        recommendations=recommendations or [],
-        filter_relaxation=filter_relaxation,
     )
 
 

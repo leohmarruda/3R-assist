@@ -1,6 +1,6 @@
 # spec.md — 3R Assist
 
-> Status: 🟢 Phases A–D complete. M2.5 Spec Sync applied. M3 Database sync applied.
+> Status: 🟢 Phases A–D complete. M2.5 Spec Sync applied. M3 Database sync applied. Phase 1 core pipeline (extraction → search → results) implemented.
 > Input: `project-proposal.md` + `assumption-log.md`
 
 ---
@@ -20,9 +20,9 @@
 | # | Feature | Notes |
 |---|---|---|
 | F01 | Free-text protocol input (PT/EN) | Single textarea; no required fields |
-| F02 | LLM-based parameter extraction | Extracts 7 fields per `docs/parameter_model.md`: **matching** — `endpoint_category`, `route`, `application_area`, `procedure_text`; **display-only** — `species`, `n_animals`, `regulatory`. Returns `confidence` (high/medium/low) |
-| F03 | Parameter display and inline correction | User sees and can edit extracted parameters before the search runs |
-| F04 | Ranked recommendations | Sorted by relevance score; each shows 3Rs class, jurisdictional indicator, confidence, matched parameters, source links; cards with score ≤ 65% rendered at reduced opacity to signal lower confidence — see ADR-011 |
+| F02 | LLM-based parameter extraction | Returns `AnalyzeResponse { experiments: ExtractionResult[] }` per `docs/parameter_model.md`. LLM produces `RawExtraction` (strict extraction only, no inference; every non-null field has a paired evidence string and `{field}_confidence`; `study_type` as free text). Application code maps `study_type` → `endpoint_category` via §4.1 lookup. See ADR-014–018 |
+| F03 | Parameter display and inline correction | S2 displays: `study_type` (what the LLM found) + `endpoint_category` (what the database covers, or "Not covered" if null); editable fields for route, application_area, procedure_text, species, animal_counts, regulatory; per-field `{field}_confidence` badge (High/Medium/Low) with "show evidence" toggle (right-aligned) per field; original protocol text in a side panel with evidence spans highlighted; `notes` displayed below parameters when non-null. When `len(experiments) > 1`, S2 shows tabs — one per experiment — each with its own editable params and evidence (ADR-014, ADR-019). |
+| F04 | Ranked recommendations | S3 calls `POST /search` after S2 confirmation. Results sorted by relevance score; each card shows 3Rs class badge, **Match** score (%), jurisdiction, validation status, matched parameters, primary source link, and OECD/regulatory link (with `oecd_tg_ref` when present, e.g. "OECD / regulatory (OECD TG 439)"); cards with score ≤ 65% at reduced opacity (ADR-011). When `len(experiments) > 1`, S3 shows tabs with per-experiment summary and results (ADR-019). |
 | F05 | 3Rs classification per result | Replacement / Reduction / Refinement label on each recommendation |
 | F06 | Jurisdictional validity indicator | Brazil / International / Both per result |
 | F07 | Direct database search | Structured filters: 3Rs class, endpoint, application area, jurisdiction; for users who already know what to look for |
@@ -61,8 +61,8 @@ Six primary screens. Detailed mockups in `/design/`. Nav has two primary items o
 | Screen | Purpose | Key interactions |
 |---|---|---|
 | **S1 — Input** | Protocol submission | Free-text area; PT/EN language toggle inside the input shell (pills in top bar of textarea — not a global page toggle); submit CTA; link to S4 below CTA; anonymous bypass as low-prominence text below a divider |
-| **S2 — Parameters** | Extracted parameter review | Confidence indicator (high/medium/low) in screen header — see ADR-010; editable field per parameter; incomplete fields highlighted (non-blocking); "run search" CTA; back link to S1 |
-| **S3 — Results** | Ranked recommendations | Protocol parameter summary below header; horizontal filter bar (3Rs class, jurisdiction) above card list — not a sidebar; card list ordered by relevance; cards with score ≤ 65% at reduced opacity (see ADR-011); each card: method name, 3Rs class badge, jurisdiction badge, confidence score, matched parameters, source links; export button visible-but-locked for anonymous (see ADR-009); feedback questionnaire (F11) below card list; "Suggest method not listed" link at bottom (see ADR-012) |
+| **S2 — Parameters** | Extracted parameter review | Per-field confidence indicator alongside "show evidence" toggle (ADR-018); `study_type` + `endpoint_category` at top (ADR-015); editable fields; protocol text side panel with evidence highlighting; when `len(experiments) > 1`, experiment tabs switch the active parameter set (ADR-019); "Search alternatives" triggers `POST /search` for **all** experiments in parallel; incomplete application_area blocks search |
+| **S3 — Results** | Ranked recommendations | Back link to S2; when `len(experiments) > 1`, experiment tabs switch per-experiment protocol summary and result list (ADR-019); horizontal filter bar (3Rs class, jurisdiction); cards ordered by relevance with **Match** % label; score ≤ 65% at reduced opacity (ADR-011); each card: method name, 3Rs badge, jurisdiction, validation status, matched params, primary source link, OECD/regulatory link with `oecd_tg_ref`; filter relaxation notice when Minimum Results Rule fires; export/feedback/suggest-method links deferred |
 | **S4 — Direct Search** | Filter-based discovery | Persistent sidebar filter panel (3Rs class, endpoint, application area, jurisdiction) — sidebar justified by iterative filter comparison workflow; unranked result list (no embedding step) with count of total methods |
 | **S5 — Account / History** | Query log and exports | Registered users only — anonymous users redirected to S1 with registration invite; query list with date, protocol snippet, result count; inline accordion expansion; PDF/CSV export per query |
 | **S6 — Method Suggestion** | Crowdsourced additions | Not in primary nav — accessed from S3 "Suggest method" link and footer; form: method name (required), source URL, 3Rs class, notes; auth optional (email pre-filled if logged in); expectation notice: manual review queue, no publication timeline |
@@ -280,7 +280,7 @@ Revisit at Phase 3 when the corpus exceeds ~200 methods (pgvector extension avai
 │   │   ├── api/
 │   │   │   └── routes/
 │   │   │       ├── analysis.py      # POST /analyze
-│   │   │       ├── search.py        # GET  /search
+│   │   │       ├── search.py        # POST /search
 │   │   │       ├── methods.py       # GET  /methods
 │   │   │       ├── auth.py          # POST /auth/magic-link, GET /auth/verify
 │   │   │       ├── queries.py       # GET  /queries  (auth required)
@@ -371,15 +371,13 @@ User (S1) → POST /analyze {protocol_text}
   → ExtractionService.extract(text)
     → LLMAdapter.extract_parameters(text) → ExtractionResult
   → return ExtractionResult to frontend (S2)
-User edits/confirms parameters (S2)
-  → POST /search {params, filters}
-    → RetrievalService.search(params, filters)
-      → EmbedderAdapter.embed(params_text) → query_vector
-      → MethodRepository.get_filtered(endpoint, routes) → [(Method, embedding)]
-      → cosine_similarity(query_vector, embeddings) → scored_methods
-      → apply_minimum_results_rule(scored_methods) → final_results
-    → QueryRepository.save(query, results_snapshot)
-  → return Recommendation[] to frontend (S3)
+User edits/confirms parameters (S2) — one tab per experiment when `len(experiments) > 1`
+  → POST /search {params} for each experiment (parallel)
+    → RetrievalService.search(params)
+      → MethodRepository.list_active() → filter by endpoint/route
+      → rank by filter-only score or cosine similarity (if semantic_ranking enabled)
+      → apply_minimum_results_rule → final_results
+  → return SearchResponse[] to frontend (S3) — one result set per experiment tab
 ```
 
 **W2 — Direct search (F07)**
@@ -445,26 +443,97 @@ All interfaces defined here before any handler is written. OpenAPI spec generate
 - Response 200:
 ```json
 {
-  "params": {
-    "endpoint_category": "acute_toxicity"|"skin_irritation"|...|null,
-    "route": ["oral","intraperitoneal"]|null,
-    "application_area": "pharma"|"cosmetics"|"chemical_safety"|"general",
-    "procedure_text": string|null,
-    "species": "rat"|"mouse"|...|null,
-    "n_animals": integer|null,
-    "regulatory": boolean|null,
-    "raw_text_excerpt": string|null
-  },
-  "confidence": "high"|"medium"|"low"
+  "experiments": [
+    {
+      "raw": {
+        "study_type": string,
+        "route": ["oral","intraperitoneal"]|null,
+        "route_evidence": string|null,
+        "application_area": "pharma"|"cosmetics"|"chemical_safety"|"general",
+        "application_area_evidence": string|null,
+        "procedure_text": string|null,
+        "procedure_text_evidence": string|null,
+        "species": "rat"|"mouse"|...|null,
+        "species_evidence": string|null,
+        "animal_counts": {
+          "female": integer|null,
+          "male": integer|null,
+          "total": integer|null,
+          "per_group": integer|null
+        }|null,
+        "animal_counts_evidence": string|null,
+        "regulatory": boolean|null,
+        "regulatory_evidence": string|null,
+        "notes": string|null
+      },
+      "endpoint_category": "acute_toxicity"|"skin_irritation"|...|null
+    }
+  ]
 }
 ```
+- Response contains **extraction only** — no `recommendations`. Retrieval runs on `POST /search` after S2 confirmation (ADR-019).
+- `endpoint_category` is set by application code (§4.1 lookup on `raw.study_type`); never written by LLM. See ADR-015.
+- Per-field `{field}_confidence` is LLM-generated; reflects certainty of each parameter given its evidence (§4.2). See ADR-018.
+- `experiments` has minimum length 1. When a protocol describes multiple distinct studies, one object per study (ADR-014).
+- S2: when `len(experiments) > 1`, experiment tabs (labelled from `study_type`) let the user review and edit each experiment independently (ADR-019).
+- `notes` displayed on S2 per active experiment tab; also shown on S3 per experiment tab when non-null.
+- Evidence fields displayed on S2 behind "show evidence" toggle per field (right-aligned). See ADR-016, ADR-018.
+- `study_type` and `endpoint_category` displayed together on S2. See ADR-015.
 - Response 422: error envelope with `EXTRACTION_FAILED`
 - LLM failures → typed error return from `ExtractionService`, never a raw exception
-- Full vocabulary for `endpoint_category`, `route`, `species`: see `docs/parameter_model.md` §3
+- Full vocabulary for `endpoint_category`, `route`, `species`: see `docs/parameter_model.md` §3–4
 
 `POST /search`
-- Request: `{ "params": ExtractionResult|null, "filters": { "three_r_class": string|null, "jurisdiction": string|null, "endpoint": string|null } }`
-- Response 200: `{ "query_id": integer, "results": Recommendation[] }`
+- Request:
+```json
+{
+  "params": {
+    "endpoint_category": "acute_toxicity"|null,
+    "route": ["oral"]|null,
+    "application_area": "general",
+    "procedure_text": string|null,
+    "species": "rat"|null,
+    "n_animals": integer|null,
+    "regulatory": boolean|null
+  },
+  "filters": {
+    "three_r_class": "replacement"|"reduction"|"refinement"|null,
+    "jurisdiction": "brazil"|"international"|"both"|null,
+    "endpoint": "acute_toxicity"|...|null
+  },
+  "lang": "pt"|"en"|null
+}
+```
+- Response 200:
+```json
+{
+  "query_id": null,
+  "results": [
+    {
+      "method": {
+        "slug": string,
+        "name_en": string,
+        "name_pt": string,
+        "description_en": string,
+        "description_pt": string,
+        "category_3r": "replacement"|"reduction"|"refinement",
+        "endpoint_category": string,
+        "validation_status": "validated"|"accepted"|"emerging",
+        "jurisdiction": "brazil"|"international"|"both",
+        "oecd_tg_ref": "TG 439"|null,
+        "primary_lit_url": string|null,
+        "regulatory_url": string|null
+      },
+      "rank": 1,
+      "score": 0.85,
+      "matched_params": ["endpoint_category", "route"]
+    }
+  ],
+  "filter_relaxation": "route_filter_relaxed"|"endpoint_and_route_filters_relaxed"|null
+}
+```
+- Response 503: `DATABASE_UNAVAILABLE` when `DATABASE_URL` is not configured
+- `query_id` is `null` until `QueryRepository` persistence is implemented (Phase 2)
 
 `POST /auth/magic-link`
 - Request: `{ "email": string }`
