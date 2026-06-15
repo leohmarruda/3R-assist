@@ -5,6 +5,6 @@ pydantic-settings>=2.0
 email-validator>=2.0
 asyncpg>=0.30.0
 python-dotenv>=1.0
-llmcall @ git+https://github.com/leohmarruda/llmcall@v0.1.0
+llmcall @ git+https://github.com/leohmarruda/llmcall@b4a3c97d36683c2ae0220b8edd152e6b4e53c9fe
 httpx>=0.27.0
 pytest>=8.0
