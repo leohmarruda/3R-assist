@@ -39,7 +39,7 @@ def main() -> int:
         return 1
 
     assert "params" in body, "missing params"
-    assert "confidence" in body, "missing confidence"
+    assert "experiments" in body, "missing experiments"
     print("OK:", json.dumps(body, ensure_ascii=False, indent=2))
     return 0
 

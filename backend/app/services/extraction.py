@@ -1,5 +1,37 @@
-from app.adapters.llm import ExtractionError, ExtractionResult, LLMAdapter
-from app.models.protocol import AnalyzeResponse
+from app.adapters.llm import ExtractionError, LLMAdapter
+from app.models.protocol import (
+    AnalyzeResponse,
+    ExperimentResult,
+    ExtractionResult,
+    RawExtraction,
+    to_protocol_parameters,
+)
+from app.services.study_type_lookup import map_study_type_to_endpoint
+
+
+def enrich_raw_extraction(raw: RawExtraction) -> ExtractionResult:
+    endpoint_category = map_study_type_to_endpoint(raw.study_type)
+    return ExtractionResult(raw=raw, endpoint_category=endpoint_category)
+
+
+def enrich_raw_experiments(raw_list: list[RawExtraction]) -> list[ExtractionResult]:
+    return [enrich_raw_extraction(raw) for raw in raw_list]
+
+
+def build_analyze_response(
+    experiments: list[ExtractionResult],
+    *,
+    recommendations: list | None = None,
+    filter_relaxation: str | None = None,
+) -> AnalyzeResponse:
+    primary = experiments[0]
+    experiment_models = [ExperimentResult.from_extraction(item) for item in experiments]
+    return AnalyzeResponse(
+        experiments=experiment_models,
+        params=to_protocol_parameters(primary),
+        recommendations=recommendations or [],
+        filter_relaxation=filter_relaxation,
+    )
 
 
 class ExtractionService:
@@ -7,12 +39,10 @@ class ExtractionService:
         self._llm = llm
 
     def extract(self, protocol_text: str) -> AnalyzeResponse | ExtractionError:
-        result = self._llm.extract_parameters(protocol_text)
-        if isinstance(result, ExtractionError):
-            return result
-        return AnalyzeResponse(
-            params=result.params,
-            confidence=result.confidence,
-            field_confidence=result.field_confidence,
-            raw_text_excerpt=result.raw_text_excerpt,
-        )
+        raw_experiments = self._llm.extract_raw_experiments(protocol_text)
+        if isinstance(raw_experiments, ExtractionError):
+            return raw_experiments
+        experiments = enrich_raw_experiments(raw_experiments)
+        if not experiments:
+            return ExtractionError()
+        return build_analyze_response(experiments)

@@ -1,15 +1,21 @@
 from app.models.protocol import (
     AnalyzeRequest,
     AnalyzeResponse,
+    AnimalCounts,
     ConfidenceLevel,
-    FieldConfidence,
+    ExperimentResult,
+    ExtractionResult,
     ProtocolParameters,
+    RawExtraction,
 )
 
 __all__ = [
     "AnalyzeRequest",
     "AnalyzeResponse",
+    "AnimalCounts",
     "ConfidenceLevel",
-    "FieldConfidence",
+    "ExperimentResult",
+    "ExtractionResult",
     "ProtocolParameters",
+    "RawExtraction",
 ]

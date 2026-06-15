@@ -42,10 +42,8 @@ async def analyze_protocol(
             logger.warning("Retrieval skipped: %s", exc)
 
     return AnalyzeResponse(
+        experiments=result.experiments,
         params=result.params,
-        confidence=result.confidence,
-        field_confidence=result.field_confidence,
-        raw_text_excerpt=result.raw_text_excerpt,
         recommendations=recommendations,
         filter_relaxation=filter_relaxation,
     )

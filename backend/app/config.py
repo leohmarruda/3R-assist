@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     )
 
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    openrouter_api_key: str | None = Field(default=None, alias="OPENROUTER_API_KEY")
+    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    llm_model: str | None = Field(default=None, alias="LLM_MODEL")
     anthropic_model: str = Field(
         default="claude-sonnet-4-20250514",
         alias="ANTHROPIC_MODEL",
@@ -53,8 +56,32 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     @property
+    def resolved_llm_model(self) -> str:
+        model = self.llm_model or self.anthropic_model
+        if model.startswith("openrouter/"):
+            return model
+        if self.openrouter_api_key:
+            if model.startswith("openai/") and not self.openai_api_key:
+                return f"openrouter/{model}"
+            if model.startswith("anthropic/") and not self.anthropic_api_key:
+                return f"openrouter/{model}"
+            if not model.startswith(
+                ("anthropic/", "openai/", "gemini/", "xai/")
+            ):
+                return f"openrouter/{model}"
+        if "/" not in model:
+            return f"anthropic/{model}"
+        return model
+
+    @property
     def use_stub_llm(self) -> bool:
-        return not self.anthropic_api_key
+        return not any(
+            (
+                self.anthropic_api_key,
+                self.openrouter_api_key,
+                self.openai_api_key,
+            )
+        )
 
 
 @lru_cache

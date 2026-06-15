@@ -1,160 +1,131 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
 
 from app.models.protocol import (
+    AnimalCounts,
     ApplicationArea,
-    ConfidenceLevel,
     EndpointCategory,
-    FieldConfidence,
-    PARAMETER_FIELD_KEYS,
-    ProtocolParameters,
+    RawExtraction,
     Route,
     Species,
 )
 
-EXTRACTION_SYSTEM_PROMPT = """You are a scientific assistant specializing in animal research ethics.
-Extract experimental parameters from the protocol description below.
+from app.prompts.extraction import build_extraction_prompt
 
-Return ONLY valid JSON with these exact fields:
-{
-  "endpoint_category": one of [acute_toxicity, skin_irritation, skin_corrosion,
-    ocular_irritation, skin_sensitisation, phototoxicity, genotoxicity,
-    pyrogenicity, skin_absorption] or null if not determinable,
-  "route": array of strings from [oral, intraperitoneal, intravenous, dermal,
-    ocular, inhalation, in_vitro] or null if not mentioned,
-  "application_area": one of [pharma, cosmetics, chemical_safety, general],
-  "procedure_text": brief English description of the procedure (max 30 words) or null,
-  "species": one of [rat, mouse, rabbit, guinea_pig, chicken, zebrafish,
-    in_vitro, other] or null,
-  "n_animals": integer or null,
-  "regulatory": true/false or null,
-  "confidence": "high" if 4+ fields extracted with certainty,
-    "medium" if 2-3 fields uncertain, "low" if endpoint_category is null,
-  "raw_text_excerpt": 1-2 sentence excerpt that best supports endpoint_category
-}
+logger = logging.getLogger(__name__)
 
-Use null for unknown fields. Do not invent values not supported by the text."""
+RAW_RESPONSE_LOG_LIMIT = 1200
+EXTRACTION_MAX_TOKENS = 4096
 
 
 @dataclass(frozen=True)
 class ExtractionError:
     code: Literal["EXTRACTION_FAILED"] = "EXTRACTION_FAILED"
     message: str = "Could not extract parameters from the provided text."
+    reason: str | None = None
+    raw_response: str | None = None
 
 
-@dataclass
-class ExtractionResult:
-    params: ProtocolParameters
-    confidence: ConfidenceLevel
-    field_confidence: FieldConfidence
-    raw_text_excerpt: str | None = None
+def truncate_raw_response(text: str | None, *, limit: int = RAW_RESPONSE_LOG_LIMIT) -> str | None:
+    if not text:
+        return None
+    trimmed = text.strip()
+    if len(trimmed) <= limit:
+        return trimmed
+    return f"{trimmed[:limit]}… [truncated, {len(trimmed)} chars total]"
+
+
+def format_extraction_error(error: ExtractionError) -> str:
+    lines = [error.message]
+    if error.reason:
+        lines.append(f"reason: {error.reason}")
+    excerpt = truncate_raw_response(error.raw_response)
+    if excerpt:
+        lines.append(f"raw_response:\n{excerpt}")
+    return "\n".join(lines)
+
+
+def log_extraction_error(error: ExtractionError) -> None:
+    logger.warning("Extraction failed: %s", format_extraction_error(error))
 
 
 class LLMAdapter(ABC):
     @abstractmethod
-    def extract_parameters(self, text: str) -> ExtractionResult | ExtractionError:
+    def extract_raw_experiments(self, text: str) -> list[RawExtraction] | ExtractionError:
         pass
 
 
-def _field_has_value(key: str, params: ProtocolParameters) -> bool:
-    value = getattr(params, key)
-    if key == "route":
-        return bool(value)
-    if key == "application_area":
-        return value is not None
-    return value is not None and value != ""
-
-
-def confidence_from_params(params: ProtocolParameters) -> ConfidenceLevel:
-    if params.endpoint_category is None:
-        return "low"
-    matching = sum(
-        _field_has_value(key, params)
-        for key in ("endpoint_category", "route", "application_area", "procedure_text")
-    )
-    display = sum(
-        _field_has_value(key, params)
-        for key in ("species", "n_animals", "regulatory")
-    )
-    if matching >= 3 and matching + display >= 4:
-        return "high"
-    if matching + display >= 2:
-        return "medium"
-    return "low"
-
-
-def field_confidence_from_params(params: ProtocolParameters) -> FieldConfidence:
-    return FieldConfidence(
-        **{
-            key: "high" if _field_has_value(key, params) else "low"
-            for key in PARAMETER_FIELD_KEYS
-        }
-    )
+def _has_extractable_content(raw: RawExtraction) -> bool:
+    return bool(raw.study_type.strip()) or bool(raw.procedure_text)
 
 
 class StubLLMAdapter(LLMAdapter):
     """Heuristic extractor aligned with docs/parameter_model.md."""
 
-    def extract_parameters(self, text: str) -> ExtractionResult | ExtractionError:
+    def extract_raw_experiments(self, text: str) -> list[RawExtraction] | ExtractionError:
+        raw = self._extract_single(text)
+        if isinstance(raw, ExtractionError):
+            return raw
+        return [raw]
+
+    def _extract_single(self, text: str) -> RawExtraction | ExtractionError:
         normalized = text.strip()
         if len(normalized) < 20:
             return ExtractionError(message="Protocol text is too short to extract parameters.")
 
         lowered = normalized.lower()
-        endpoint = self._extract_endpoint(lowered)
+        study_type = self._extract_study_type(lowered)
+        if study_type is None:
+            return ExtractionError()
+
         routes = self._extract_routes(lowered)
         species = self._extract_species(lowered)
-        n_animals = self._extract_n_animals(lowered)
+        animal_counts = self._extract_animal_counts(lowered)
         regulatory = self._extract_regulatory(lowered)
         application_area = self._extract_application_area(lowered)
-        procedure_text = self._extract_procedure_text(normalized, endpoint)
-        raw_excerpt = self._extract_excerpt(normalized)
+        procedure_text = self._extract_procedure_text(normalized, study_type)
 
-        params = ProtocolParameters(
-            endpoint_category=endpoint,
+        raw = RawExtraction(
+            study_type=study_type,
             route=routes,
             application_area=application_area,
             procedure_text=procedure_text,
             species=species,
-            n_animals=n_animals,
+            animal_counts=animal_counts,
             regulatory=regulatory,
         )
 
-        if not params.has_extractable_content():
+        if not _has_extractable_content(raw):
             return ExtractionError()
 
-        return ExtractionResult(
-            params=params,
-            confidence=confidence_from_params(params),
-            field_confidence=field_confidence_from_params(params),
-            raw_text_excerpt=raw_excerpt,
-        )
+        return raw
 
     @staticmethod
-    def _extract_endpoint(text: str) -> EndpointCategory | None:
-        if re.search(r"ld50|dose letal|lethal dose|acute tox|toxicity study", text):
-            return "acute_toxicity"
+    def _extract_study_type(text: str) -> str | None:
+        if re.search(r"ld50|dose letal|lethal dose|acute tox", text):
+            return "acute toxicity LD50 study"
         if re.search(r"genotox|mutagen|micronucle|ames", text):
-            return "genotoxicity"
+            return "in vivo genotoxicity battery"
         if re.search(r"skin sensiti|alergeni|llna|patch test", text):
-            return "skin_sensitisation"
+            return "skin sensitisation study"
         if re.search(r"ocular|conjunctiv|eye irrit|draize.*eye", text):
-            return "ocular_irritation"
+            return "ocular irritation study"
         if re.search(r"skin irrit|dermal irrit", text):
-            return "skin_irritation"
+            return "skin irritation study"
         if re.search(r"skin corrosion|corrosão cut", text):
-            return "skin_corrosion"
+            return "skin corrosion study"
         if re.search(r"phototox|3t3 nru", text):
-            return "phototoxicity"
+            return "phototoxicity study"
         if re.search(r"pyrogen|endotoxin|mat\b", text):
-            return "pyrogenicity"
+            return "pyrogenicity study"
         if re.search(r"skin absorption|penetração dérm", text):
-            return "skin_absorption"
+            return "skin absorption study"
         return None
 
     @staticmethod
@@ -195,17 +166,17 @@ class StubLLMAdapter(LLMAdapter):
         return None
 
     @staticmethod
-    def _extract_n_animals(text: str) -> int | None:
+    def _extract_animal_counts(text: str) -> AnimalCounts | None:
         patterns = (
-            r"(\d+)\s+(?:male\s+)?(?:female\s+)?wistar\s+rat",
-            r"total of\s+(\d+)\s+(?:male\s+)?rat",
-            r"(\d+)\s+(?:male\s+)?(?:female\s+)?rat",
-            r"(\d+)\s+animals?",
+            (r"(\d+)\s+(?:male\s+)?(?:female\s+)?wistar\s+rat", "total"),
+            (r"total of\s+(\d+)\s+(?:male\s+)?rat", "total"),
+            (r"(\d+)\s+(?:male\s+)?(?:female\s+)?rat", "total"),
+            (r"(\d+)\s+animals?", "total"),
         )
-        for pattern in patterns:
+        for pattern, field_name in patterns:
             match = re.search(pattern, text, flags=re.IGNORECASE)
             if match:
-                return int(match.group(1))
+                return AnimalCounts(**{field_name: int(match.group(1))})
         return None
 
     @staticmethod
@@ -234,10 +205,12 @@ class StubLLMAdapter(LLMAdapter):
         return "general"
 
     @staticmethod
-    def _extract_procedure_text(text: str, endpoint: EndpointCategory | None) -> str | None:
-        if endpoint == "acute_toxicity" and re.search(r"ld50|litchfield|wilcoxon", text, re.I):
+    def _extract_procedure_text(text: str, study_type: str) -> str | None:
+        if "acute toxicity" in study_type.lower() and re.search(
+            r"ld50|litchfield|wilcoxon", text, re.I
+        ):
             return "Single-dose acute toxicity LD50 Litchfield-Wilcoxon"
-        if endpoint == "acute_toxicity":
+        if "acute toxicity" in study_type.lower():
             return "Single-dose acute toxicity"
         match = re.search(
             r"(single-dose[^.]{0,80}|28-day[^.]{0,80}|repeated dose[^.]{0,80})",
@@ -246,64 +219,326 @@ class StubLLMAdapter(LLMAdapter):
         )
         return match.group(1).strip() if match else None
 
-    @staticmethod
-    def _extract_excerpt(text: str) -> str | None:
-        for pattern in (
-            r"Acute Toxicity Study[^.]*\.",
-            r"Single-dose acute toxicity[^.]*\.",
-            r"LD50[^.]*\.",
-        ):
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                return match.group(0).strip()
-        sentences = re.split(r"(?<=[.!?])\s+", text)
-        return sentences[0][:240] if sentences else None
+
+def _normalize_model(model: str) -> str:
+    if "/" not in model:
+        return f"anthropic/{model}"
+    return model
 
 
-class AnthropicLLMAdapter(LLMAdapter):
-    def __init__(self, api_key: str, model: str) -> None:
-        self._api_key = api_key
-        self._model = model
+def _repair_json_text(text: str) -> str:
+    trimmed = text.strip()
+    if re.match(r'^\{"experiments"\s*:', trimmed):
+        return trimmed
+    match = re.match(r"^(?:\{)?experiments\"\s*:\s*", trimmed)
+    if match:
+        return '{"experiments": ' + trimmed[match.end() :]
+    if trimmed.startswith('"experiments"'):
+        return "{" + trimmed
+    return trimmed
 
-    def extract_parameters(self, text: str) -> ExtractionResult | ExtractionError:
+
+def _repair_truncated_json(text: str) -> str:
+    """Close unterminated strings and open braces/brackets in truncated LLM output."""
+    stack: list[str] = []
+    in_string = False
+    escape = False
+
+    for char in text:
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            stack.append("}")
+        elif char == "[":
+            stack.append("]")
+        elif char in "}]":
+            if stack and stack[-1] == char:
+                stack.pop()
+
+    repaired = text
+    if in_string:
+        repaired += '"'
+
+    repaired = repaired.rstrip()
+    while repaired.endswith(","):
+        repaired = repaired[:-1].rstrip()
+
+    if repaired.endswith(":"):
+        repaired += "null"
+
+    repaired += "".join(reversed(stack))
+    return repaired
+
+
+def _collect_json_candidates(raw: str) -> list[str]:
+    text = raw.strip()
+    candidates: list[str] = []
+
+    def add(candidate: str) -> None:
+        stripped = candidate.strip()
+        if stripped and stripped not in candidates:
+            candidates.append(stripped)
+
+    add(text)
+
+    if text.startswith("```"):
+        unfenced = re.sub(r"^```(?:json)?\s*", "", text)
+        unfenced = re.sub(r"\s*```$", "", unfenced).strip()
+        add(unfenced)
+
+    for match in re.finditer(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE):
+        add(match.group(1))
+
+    for match in re.finditer(r'\{\s*"experiments"\s*:', text):
+        add(text[match.start() :])
+
+    return candidates
+
+
+def _parse_json_payload(raw: str) -> object:
+    candidates: list[str] = []
+    for source in _collect_json_candidates(raw):
+        candidates.append(source)
+        brace_repaired = _repair_json_text(source)
+        if brace_repaired != source:
+            candidates.append(brace_repaired)
+        truncated = _repair_truncated_json(source)
+        if truncated != source:
+            candidates.append(truncated)
+        if brace_repaired != source:
+            truncated_brace = _repair_truncated_json(brace_repaired)
+            if truncated_brace not in candidates:
+                candidates.append(truncated_brace)
+
+    last_error: json.JSONDecodeError | None = None
+    for candidate in candidates:
         try:
-            import anthropic
-        except ImportError:
-            return ExtractionError(message="anthropic package is not installed.")
+            return json.loads(candidate)
+        except json.JSONDecodeError as exc:
+            last_error = exc
 
-        client = anthropic.Anthropic(api_key=self._api_key)
-        try:
-            response = client.messages.create(
-                model=self._model,
-                max_tokens=1024,
-                system=EXTRACTION_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": text}],
-            )
-        except Exception:
-            return ExtractionError()
+    if last_error is not None:
+        raise last_error
+    raise json.JSONDecodeError("No JSON candidates to parse", raw.strip(), 0)
 
-        raw = response.content[0].text if response.content else ""
-        try:
-            payload = json.loads(raw)
-            confidence = payload.pop("confidence", None)
-            raw_text_excerpt = payload.pop("raw_text_excerpt", None)
-            params = ProtocolParameters.model_validate(payload)
-        except (json.JSONDecodeError, ValueError):
-            return ExtractionError()
 
-        if not params.has_extractable_content():
-            return ExtractionError()
+def _coerce_animal_counts(payload: dict) -> AnimalCounts | None:
+    counts = payload.get("animal_counts")
+    if isinstance(counts, dict):
+        return AnimalCounts.model_validate(counts)
 
-        resolved_confidence = confidence or confidence_from_params(params)
-        return ExtractionResult(
-            params=params,
-            confidence=resolved_confidence,
-            field_confidence=field_confidence_from_params(params),
-            raw_text_excerpt=raw_text_excerpt,
+    legacy_n_animals = payload.pop("n_animals", None)
+    if legacy_n_animals is not None:
+        return AnimalCounts(total=legacy_n_animals)
+    return None
+
+
+def _coerce_application_area(payload: dict) -> None:
+    area = payload.get("application_area")
+    if area is None or (isinstance(area, str) and not area.strip()):
+        payload["application_area"] = "general"
+
+
+def _is_null_route_marker(value: object) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in {"", "null", "none"}
+    return False
+
+
+def _coerce_route(payload: dict) -> None:
+    route = payload.get("route")
+    if route is None:
+        return
+    if isinstance(route, str):
+        payload["route"] = None if _is_null_route_marker(route) else [route]
+        return
+    if not isinstance(route, list):
+        return
+
+    normalized = [item for item in route if not _is_null_route_marker(item)]
+    payload["route"] = normalized or None
+
+
+_SPECIES_ALIASES = frozenset(
+    {
+        "bovine",
+        "cow",
+        "cattle",
+        "porcine",
+        "pig",
+        "swine",
+        "canine",
+        "dog",
+        "feline",
+        "cat",
+        "ovine",
+        "sheep",
+        "caprine",
+        "goat",
+        "equine",
+        "horse",
+    }
+)
+
+
+def _coerce_species(payload: dict) -> None:
+    species = payload.get("species")
+    if not isinstance(species, str):
+        return
+    normalized = species.strip().lower()
+    if normalized in _SPECIES_ALIASES:
+        payload["species"] = "other"
+
+
+def _raw_from_experiment_item(item: object) -> RawExtraction | None:
+    if not isinstance(item, dict):
+        return None
+
+    payload = dict(item)
+    payload.pop("endpoint_category", None)
+    payload.pop("confidence", None)
+    payload.pop("raw_text_excerpt", None)
+    _coerce_application_area(payload)
+    _coerce_route(payload)
+    _coerce_species(payload)
+    payload["animal_counts"] = _coerce_animal_counts(payload)
+
+    study_type = payload.get("study_type")
+    if not isinstance(study_type, str) or not study_type.strip():
+        legacy_endpoint = item.get("endpoint_category") if isinstance(item, dict) else None
+        if isinstance(legacy_endpoint, str) and legacy_endpoint:
+            payload["study_type"] = legacy_endpoint.replace("_", " ")
+        else:
+            return None
+
+    try:
+        raw = RawExtraction.model_validate(payload)
+    except ValueError:
+        return None
+
+    if not _has_extractable_content(raw):
+        return None
+    return raw
+
+
+def _raw_experiments_from_payload(
+    payload: object,
+    *,
+    raw_response: str | None = None,
+) -> list[RawExtraction] | ExtractionError:
+    excerpt = truncate_raw_response(raw_response)
+
+    if not isinstance(payload, dict):
+        return ExtractionError(
+            message="LLM response is not a JSON object.",
+            reason="invalid_payload_type",
+            raw_response=excerpt,
         )
 
+    if payload.get("error") and not payload.get("experiments"):
+        message = payload.get("error")
+        if isinstance(message, str) and message:
+            return ExtractionError(
+                message=message,
+                reason="guard_response",
+                raw_response=excerpt,
+            )
+        return ExtractionError(
+            reason="guard_response_empty",
+            raw_response=excerpt,
+        )
 
-def build_llm_adapter(*, api_key: str | None, model: str) -> LLMAdapter:
-    if api_key:
-        return AnthropicLLMAdapter(api_key=api_key, model=model)
-    return StubLLMAdapter()
+    if "experiments" in payload:
+        raw_items = payload.get("experiments")
+        if not isinstance(raw_items, list) or not raw_items:
+            return ExtractionError(
+                message="LLM returned an empty experiments array.",
+                reason="empty_experiments_array",
+                raw_response=excerpt,
+            )
+        experiments = [
+            parsed
+            for item in raw_items
+            if (parsed := _raw_from_experiment_item(item)) is not None
+        ]
+        if not experiments:
+            return ExtractionError(
+                message=f"AI model call returned an invalid response: {excerpt or ''}".rstrip(),
+                reason="no_valid_experiment_items",
+                raw_response=excerpt,
+            )
+        return experiments
+
+    single = _raw_from_experiment_item(payload)
+    if single is None:
+        return ExtractionError(
+            message="Single-object LLM response could not be parsed as an experiment.",
+            reason="invalid_single_payload",
+            raw_response=excerpt,
+        )
+    return [single]
+
+
+class LlmCallAdapter(LLMAdapter):
+    def __init__(self, model: str) -> None:
+        self._model = _normalize_model(model)
+
+    def extract_raw_experiments(self, text: str) -> list[RawExtraction] | ExtractionError:
+        try:
+            import llmcall
+            from llmcall import CallConstraints, LLMError as LlmCallError
+        except ImportError:
+            return ExtractionError(message="llmcall package is not installed.")
+
+        result = llmcall.call(
+            self._model,
+            build_extraction_prompt(text),
+            constraints=CallConstraints(
+                max_tokens=EXTRACTION_MAX_TOKENS,
+                response_format="json",
+            ),
+        )
+        if isinstance(result, LlmCallError):
+            error = ExtractionError(
+                message=result.message,
+                reason="llm_api_error",
+            )
+            log_extraction_error(error)
+            return error
+
+        raw_content = result.content
+        try:
+            payload = _parse_json_payload(raw_content)
+        except json.JSONDecodeError as exc:
+            error = ExtractionError(
+                message=f"LLM response is not valid JSON: {exc}",
+                reason="json_decode_error",
+                raw_response=truncate_raw_response(raw_content),
+            )
+            log_extraction_error(error)
+            return error
+
+        parsed = _raw_experiments_from_payload(
+            payload,
+            raw_response=raw_content,
+        )
+        if isinstance(parsed, ExtractionError):
+            log_extraction_error(parsed)
+        return parsed
+
+
+def build_llm_adapter(*, model: str, use_stub: bool) -> LLMAdapter:
+    if use_stub:
+        return StubLLMAdapter()
+    return LlmCallAdapter(model=model)

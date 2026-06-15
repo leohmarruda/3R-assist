@@ -41,18 +41,45 @@ Species = Literal[
     "other",
 ]
 
-PARAMETER_FIELD_KEYS = (
-    "endpoint_category",
-    "route",
-    "application_area",
-    "procedure_text",
-    "species",
-    "n_animals",
-    "regulatory",
-)
+
+class AnimalCounts(BaseModel):
+    female: int | None = None
+    male: int | None = None
+    total: int | None = None
+    per_group: int | None = None
+
+
+class RawExtraction(BaseModel):
+    study_type: str
+    route: list[Route] | None = None
+    route_evidence: str | None = None
+    route_confidence: ConfidenceLevel | None = None
+    application_area: ApplicationArea = "general"
+    application_area_evidence: str | None = None
+    application_area_confidence: ConfidenceLevel | None = None
+    procedure_text: str | None = None
+    procedure_text_evidence: str | None = None
+    procedure_text_confidence: ConfidenceLevel | None = None
+    species: Species | None = None
+    species_evidence: str | None = None
+    species_confidence: ConfidenceLevel | None = None
+    animal_counts: AnimalCounts | None = None
+    animal_counts_evidence: str | None = None
+    animal_counts_confidence: ConfidenceLevel | None = None
+    regulatory: bool | None = None
+    regulatory_evidence: str | None = None
+    regulatory_confidence: ConfidenceLevel | None = None
+    notes: str | None = None
+
+
+class ExtractionResult(BaseModel):
+    raw: RawExtraction
+    endpoint_category: EndpointCategory | None = None
 
 
 class ProtocolParameters(BaseModel):
+    """Flattened view used by retrieval and legacy API fields."""
+
     endpoint_category: EndpointCategory | None = None
     route: list[Route] | None = None
     application_area: ApplicationArea = "general"
@@ -65,25 +92,51 @@ class ProtocolParameters(BaseModel):
         return self.endpoint_category is not None or bool(self.procedure_text)
 
 
+def primary_animal_count(counts: AnimalCounts | None) -> int | None:
+    if counts is None:
+        return None
+    if counts.total is not None:
+        return counts.total
+    if counts.male is not None and counts.female is not None:
+        return counts.male + counts.female
+    return counts.male or counts.female or counts.per_group
+
+
+def to_protocol_parameters(result: ExtractionResult) -> ProtocolParameters:
+    return ProtocolParameters(
+        endpoint_category=result.endpoint_category,
+        route=result.raw.route,
+        application_area=result.raw.application_area,
+        procedure_text=result.raw.procedure_text,
+        species=result.raw.species,
+        n_animals=primary_animal_count(result.raw.animal_counts),
+        regulatory=result.raw.regulatory,
+    )
+
+
 class AnalyzeRequest(BaseModel):
     protocol_text: str = Field(..., min_length=20, max_length=10000)
     lang: Literal["pt", "en"] | None = None
 
 
-class FieldConfidence(BaseModel):
-    endpoint_category: ConfidenceLevel | None = None
-    route: ConfidenceLevel | None = None
-    application_area: ConfidenceLevel | None = None
-    procedure_text: ConfidenceLevel | None = None
-    species: ConfidenceLevel | None = None
-    n_animals: ConfidenceLevel | None = None
-    regulatory: ConfidenceLevel | None = None
+class ExperimentResult(BaseModel):
+    raw: RawExtraction
+    endpoint_category: EndpointCategory | None = None
+    params: ProtocolParameters
+    notes: str | None = None
+
+    @classmethod
+    def from_extraction(cls, result: ExtractionResult) -> ExperimentResult:
+        return cls(
+            raw=result.raw,
+            endpoint_category=result.endpoint_category,
+            params=to_protocol_parameters(result),
+            notes=result.raw.notes,
+        )
 
 
 class AnalyzeResponse(BaseModel):
+    experiments: list[ExperimentResult] = Field(..., min_length=1)
     params: ProtocolParameters
-    confidence: ConfidenceLevel
-    field_confidence: FieldConfidence
-    raw_text_excerpt: str | None = None
     recommendations: list[Recommendation] = Field(default_factory=list)
     filter_relaxation: str | None = None

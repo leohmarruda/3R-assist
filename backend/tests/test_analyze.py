@@ -28,13 +28,13 @@ def test_analyze_returns_parameters():
 
     assert response.status_code == 200
     data = response.json()
-    assert data["confidence"] in {"high", "medium", "low"}
+    assert len(data["experiments"]) >= 1
     assert data["params"]["endpoint_category"] == "acute_toxicity"
     assert data["params"]["route"] == ["oral", "intraperitoneal"]
     assert data["params"]["species"] == "rat"
     assert data["params"]["n_animals"] == 60
     assert data["params"]["regulatory"] is True
-    assert data["field_confidence"]["endpoint_category"] == "high"
+    assert data["experiments"][0]["raw"]["study_type"]
     assert data["recommendations"] == []
 
 
