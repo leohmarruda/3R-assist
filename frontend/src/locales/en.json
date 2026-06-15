@@ -13,7 +13,10 @@
     "loadError": "Could not load admin data.",
     "noTables": "No tables found.",
     "emptyTable": "This table has no rows.",
-    "rowCount": "Showing {{shown}} of {{total}} rows"
+    "rowCount": "Rows {{from}}–{{to}} of {{total}}",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageOf": "Page {{current}} of {{total}}"
   },
   "s1": {
     "title": "Describe your experimental protocol",

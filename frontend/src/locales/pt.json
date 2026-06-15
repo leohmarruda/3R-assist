@@ -13,7 +13,10 @@
     "loadError": "Não foi possível carregar os dados de administração.",
     "noTables": "Nenhuma tabela encontrada.",
     "emptyTable": "Esta tabela não possui registros.",
-    "rowCount": "Exibindo {{shown}} de {{total}} registros"
+    "rowCount": "Registros {{from}}–{{to}} de {{total}}",
+    "prevPage": "Anterior",
+    "nextPage": "Próxima",
+    "pageOf": "Página {{current}} de {{total}}"
   },
   "s1": {
     "title": "Descreva seu protocolo experimental",

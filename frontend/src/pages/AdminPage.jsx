@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { fetchAdminTable, fetchAdminTables } from '../lib/admin'
+
+const PAGE_SIZE = 10
 
 function formatCell(value) {
   if (value === null || value === undefined) {
@@ -14,8 +17,11 @@ function formatCell(value) {
 
 export default function AdminPage() {
   const { t } = useTranslation()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [tables, setTables] = useState([])
   const [activeTable, setActiveTable] = useState(null)
+  const [page, setPage] = useState(0)
   const [tableData, setTableData] = useState(null)
   const [loadingTables, setLoadingTables] = useState(true)
   const [loadingData, setLoadingData] = useState(false)
@@ -31,7 +37,6 @@ export default function AdminPage() {
         const result = await fetchAdminTables()
         if (cancelled) return
         setTables(result.tables)
-        setActiveTable(result.tables[0] ?? null)
       } catch (err) {
         if (!cancelled) {
           setError(err.message ?? t('admin.loadError'))
@@ -50,6 +55,24 @@ export default function AdminPage() {
   }, [t])
 
   useEffect(() => {
+    if (tables.length === 0) return
+
+    const fromHash = location.hash.replace(/^#/, '')
+    if (fromHash && tables.includes(fromHash)) {
+      setActiveTable(fromHash)
+      return
+    }
+
+    setActiveTable((current) => current ?? tables[0])
+  }, [tables, location.hash])
+
+  function selectTable(table) {
+    setActiveTable(table)
+    setPage(0)
+    navigate(`/admin#${table}`, { replace: true })
+  }
+
+  useEffect(() => {
     if (!activeTable) {
       setTableData(null)
       return undefined
@@ -61,7 +84,10 @@ export default function AdminPage() {
       setLoadingData(true)
       setError(null)
       try {
-        const result = await fetchAdminTable(activeTable)
+        const result = await fetchAdminTable(activeTable, {
+          limit: PAGE_SIZE,
+          offset: page * PAGE_SIZE,
+        })
         if (!cancelled) {
           setTableData(result)
         }
@@ -81,7 +107,9 @@ export default function AdminPage() {
     return () => {
       cancelled = true
     }
-  }, [activeTable, t])
+  }, [activeTable, page, t])
+
+  const totalPages = tableData ? Math.max(1, Math.ceil(tableData.total / PAGE_SIZE)) : 1
 
   return (
     <main className="mx-auto w-full max-w-content flex-1 px-container-padding py-section-gap">
@@ -120,10 +148,11 @@ export default function AdminPage() {
               return (
                 <button
                   key={table}
+                  id={table}
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => setActiveTable(table)}
+                  onClick={() => selectTable(table)}
                   className={
                     isActive
                       ? 'border-b-2 border-primary px-3 py-2 font-nav-link text-nav-link font-medium text-primary'
@@ -144,47 +173,71 @@ export default function AdminPage() {
             ) : tableData ? (
               <>
                 <p className="mb-card-gap font-metadata text-metadata text-on-secondary-container">
-                  {t('admin.rowCount', {
-                    shown: tableData.rows.length,
-                    total: tableData.total,
-                  })}
+                  {tableData.total === 0
+                    ? t('admin.emptyTable')
+                    : t('admin.rowCount', {
+                        from: tableData.offset + 1,
+                        to: tableData.offset + tableData.rows.length,
+                        total: tableData.total,
+                      })}
                 </p>
-                {tableData.rows.length === 0 ? (
-                  <p className="font-body-base text-body-base text-on-secondary-container">
-                    {t('admin.emptyTable')}
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse text-left">
-                      <thead>
-                        <tr className="border-b border-border-subtle">
-                          {tableData.columns.map((column) => (
-                            <th
-                              key={column}
-                              className="whitespace-nowrap px-3 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant"
-                            >
-                              {column}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border-subtle font-metadata text-metadata">
-                        {tableData.rows.map((row, index) => (
-                          <tr key={`${activeTable}-${index}`}>
+                {tableData.rows.length === 0 ? null : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-max min-w-full border-collapse text-left">
+                        <thead>
+                          <tr className="border-b border-border-subtle">
                             {tableData.columns.map((column) => (
-                              <td
+                              <th
                                 key={column}
-                                className="max-w-xs truncate px-3 py-2 align-top text-on-surface"
-                                title={formatCell(row[column])}
+                                className="whitespace-nowrap px-3 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant"
                               >
-                                {formatCell(row[column])}
-                              </td>
+                                {column}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-border-subtle font-metadata text-metadata">
+                          {tableData.rows.map((row, index) => (
+                            <tr key={`${activeTable}-${tableData.offset + index}`}>
+                              {tableData.columns.map((column) => (
+                                <td
+                                  key={column}
+                                  className="whitespace-nowrap px-3 py-2 align-top text-on-surface"
+                                >
+                                  {formatCell(row[column])}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {tableData.total > PAGE_SIZE && (
+                      <div className="mt-card-gap flex items-center justify-between gap-4">
+                        <button
+                          type="button"
+                          disabled={page === 0}
+                          onClick={() => setPage((current) => current - 1)}
+                          className="rounded-md border border-border-subtle px-3 py-1.5 font-metadata text-metadata text-on-surface transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {t('admin.prevPage')}
+                        </button>
+                        <span className="font-metadata text-metadata text-on-secondary-container">
+                          {t('admin.pageOf', { current: page + 1, total: totalPages })}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={page >= totalPages - 1}
+                          onClick={() => setPage((current) => current + 1)}
+                          className="rounded-md border border-border-subtle px-3 py-1.5 font-metadata text-metadata text-on-surface transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {t('admin.nextPage')}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             ) : null}
