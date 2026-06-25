@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import LangToggle from './LangToggle'
+import { currentLanguage, setLanguage } from '../lib/i18n'
 
 const MIN_LENGTH = 20
 const MAX_LENGTH = 10000
@@ -9,15 +10,13 @@ export { MIN_LENGTH, MAX_LENGTH }
 export default function ProtocolTextarea({
   value,
   onChange,
-  lang,
-  onLangChange,
   id = 'protocol-text',
 }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
+  const lang = currentLanguage()
 
   const handleLangChange = (nextLang) => {
-    onLangChange(nextLang)
-    i18n.changeLanguage(nextLang)
+    void setLanguage(nextLang)
   }
 
   return (

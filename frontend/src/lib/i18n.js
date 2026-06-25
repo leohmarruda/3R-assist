@@ -8,9 +8,20 @@ i18n.use(initReactI18next).init({
     pt: { translation: pt },
     en: { translation: en },
   },
-  lng: 'pt',
-  fallbackLng: 'pt',
+  lng: 'en',
+  fallbackLng: 'en',
   interpolation: { escapeValue: false },
+  react: {
+    useSuspense: false,
+  },
 })
+
+export function currentLanguage() {
+  return (i18n.resolvedLanguage ?? i18n.language ?? 'en').split('-')[0]
+}
+
+export function setLanguage(lang) {
+  return i18n.changeLanguage(lang)
+}
 
 export default i18n

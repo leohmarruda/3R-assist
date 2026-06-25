@@ -2,8 +2,18 @@
   "nav": {
     "analyze": "Analisar",
     "search": "Buscar",
+    "glossary": "Glossário",
+    "info": "Info",
     "admin": "Admin",
     "signIn": "Entrar"
+  },
+  "glossary": {
+    "title": "Glossário",
+    "placeholder": "Vocabulário controlado e definições de termos — em breve."
+  },
+  "info": {
+    "title": "Info",
+    "placeholder": "Sobre o 3R Assist, metodologia e documentação — em breve."
   },
   "admin": {
     "title": "Administração do banco",

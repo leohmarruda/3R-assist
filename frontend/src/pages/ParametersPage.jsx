@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
@@ -6,6 +6,7 @@ import ExperimentTabs, { experimentTabLabel } from '../components/ExperimentTabs
 import ParameterField, { EvidenceToggle } from '../components/ParameterField'
 import ProtocolTextPanel from '../components/ProtocolTextPanel'
 import { resolveExperimentStates } from '../lib/experimentState.js'
+import { setLanguage } from '../lib/i18n'
 import { searchAllExperiments } from '../lib/search'
 import {
   ANIMAL_COUNT_FIELDS,
@@ -32,6 +33,12 @@ export default function ParametersPage() {
   )
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState(null)
+
+  useEffect(() => {
+    if (analysis?.lang) {
+      void setLanguage(analysis.lang)
+    }
+  }, [analysis?.lang])
 
   if (!analysis?.params && !analysis?.experimentStates?.length) {
     return <Navigate to="/" replace />

@@ -2,8 +2,18 @@
   "nav": {
     "analyze": "Analyze",
     "search": "Search",
+    "glossary": "Glossary",
+    "info": "Info",
     "admin": "Admin",
     "signIn": "Sign in"
+  },
+  "glossary": {
+    "title": "Glossary",
+    "placeholder": "Controlled vocabulary and term definitions — coming soon."
+  },
+  "info": {
+    "title": "Info",
+    "placeholder": "About 3R Assist, methodology, and documentation — coming soon."
   },
   "admin": {
     "title": "Database admin",

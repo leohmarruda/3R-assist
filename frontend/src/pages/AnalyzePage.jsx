@@ -4,25 +4,27 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Button from '../components/Button'
 import ProtocolTextarea, { MIN_LENGTH } from '../components/ProtocolTextarea'
 import { buildAnalysisState } from '../lib/analyze'
+import { currentLanguage, setLanguage } from '../lib/i18n'
 import {
   MOCK_ANALYZE_RESPONSE,
   MOCK_PROTOCOL_TEXT,
 } from '../lib/mockAnalyzeResponse'
 
 export default function AnalyzePage({ onSubmit }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const restored = location.state
 
   const [protocolText, setProtocolText] = useState(restored?.protocolText ?? '')
-  const [lang, setLang] = useState(restored?.lang ?? 'en')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    i18n.changeLanguage(restored?.lang ?? 'en')
-  }, [restored?.lang, i18n])
+    if (restored?.lang) {
+      void setLanguage(restored.lang)
+    }
+  }, [restored?.lang])
 
   const trimmedLength = protocolText.trim().length
   const canSubmit = trimmedLength >= MIN_LENGTH && !submitting
@@ -32,10 +34,10 @@ export default function AnalyzePage({ onSubmit }) {
 
     setError(null)
     setProtocolText(MOCK_PROTOCOL_TEXT)
-    navigate('/parameters', {
+      navigate('/parameters', {
       state: buildAnalysisState(MOCK_ANALYZE_RESPONSE, {
         protocolText: MOCK_PROTOCOL_TEXT,
-        lang,
+        lang: currentLanguage(),
         isMock: true,
       }),
     })
@@ -48,6 +50,7 @@ export default function AnalyzePage({ onSubmit }) {
     setError(null)
     setSubmitting(true)
     try {
+      const lang = currentLanguage()
       const result = await onSubmit({
         protocolText: protocolText.trim(),
         lang,
@@ -80,8 +83,6 @@ export default function AnalyzePage({ onSubmit }) {
         <ProtocolTextarea
           value={protocolText}
           onChange={setProtocolText}
-          lang={lang}
-          onLangChange={setLang}
         />
 
         {trimmedLength > 0 && trimmedLength < MIN_LENGTH && (

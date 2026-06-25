@@ -1,9 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { NavLink } from 'react-router-dom'
+import LangToggle from './LangToggle'
+import { currentLanguage, setLanguage } from '../lib/i18n'
 
 const routes = [
   { key: 'analyze', to: '/' },
   { key: 'search', to: '/buscar' },
+  { key: 'glossary', to: '/glossary' },
+  { key: 'info', to: '/info' },
 ]
 
 export default function TopNav() {
@@ -37,6 +41,12 @@ export default function TopNav() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          <LangToggle
+            value={currentLanguage()}
+            onChange={(nextLang) => {
+              void setLanguage(nextLang)
+            }}
+          />
           <NavLink
             to="/admin"
             className={({ isActive }) =>

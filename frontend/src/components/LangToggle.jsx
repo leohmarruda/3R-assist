@@ -8,7 +8,7 @@ export default function LangToggle({ value, onChange }) {
     <div
       className="flex items-center rounded bg-surface-container-high p-0.5"
       role="group"
-      aria-label="Protocol language"
+      aria-label="Interface language"
     >
       {options.map((option) => {
         const active = value === option.value
