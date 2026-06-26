@@ -6,7 +6,7 @@ import logging
 from collections.abc import Callable
 
 from app.adapters.embedder import EmbedderAdapter
-from app.models.method import Method
+from app.models.method import Method, MethodValidationContext
 from app.models.protocol import ProtocolParameters
 from app.models.recommendation import Recommendation
 from app.repositories.methods import MethodRepository
@@ -22,8 +22,8 @@ def build_query_text(params: ProtocolParameters) -> str:
         parts.append(params.endpoint_category)
     if params.procedure_text:
         parts.append(params.procedure_text)
-    if params.application_area:
-        parts.append(params.application_area)
+    if params.study_domain:
+        parts.append(params.study_domain)
     if params.route:
         parts.extend(params.route)
     return " ".join(parts)
@@ -87,19 +87,38 @@ def _matched_params(method: Method, params: ProtocolParameters) -> list[str]:
         or any(route in method.routes_applicable for route in params.route)
     ):
         matched.append("route")
-    if params.application_area and method.application_area == params.application_area:
-        matched.append("application_area")
+    if params.study_domain and method.study_domain == params.study_domain:
+        matched.append("study_domain")
     return matched
+
+
+def _contexts_for_params(
+    contexts: list[MethodValidationContext],
+    params: ProtocolParameters,
+) -> list[MethodValidationContext]:
+    if not contexts:
+        return []
+    domain = params.study_domain or "general"
+    return [
+        context
+        for context in contexts
+        if context.study_domain in (domain, "general")
+    ]
 
 
 def _build_recommendations(
     scored: list[tuple[Method, float]],
     params: ProtocolParameters,
+    contexts_by_method: dict[int, list[MethodValidationContext]],
 ) -> list[Recommendation]:
     scored.sort(key=lambda item: (-item[1], item[0].slug))
     return [
         Recommendation(
             method=method,
+            validation_contexts=_contexts_for_params(
+                contexts_by_method.get(method.id, []),
+                params,
+            ),
             rank=index,
             score=score,
             matched_params=_matched_params(method, params),
@@ -124,33 +143,37 @@ class RetrievalService:
         self,
         params: ProtocolParameters,
     ) -> tuple[list[Recommendation], str | None]:
-        methods = await self._repository.list_active()
+        methods, contexts_by_method = await self._repository.list_active_with_contexts()
         if not methods:
             return [], None
 
         if self._semantic_ranking:
-            return self._search_semantic(methods, params)
-        return self._search_filter_only(methods, params)
+            return self._search_semantic(methods, params, contexts_by_method)
+        return self._search_filter_only(methods, params, contexts_by_method)
 
     def _search_with_relaxation(
         self,
         candidates: list[Method],
         params: ProtocolParameters,
-        rank: Callable[[list[Method], ProtocolParameters], list[Recommendation]],
+        contexts_by_method: dict[int, list[MethodValidationContext]],
+        rank: Callable[
+            [list[Method], ProtocolParameters, dict[int, list[MethodValidationContext]]],
+            list[Recommendation],
+        ],
     ) -> tuple[list[Recommendation], str | None]:
         relaxation: str | None = None
 
         filtered = _apply_filters(candidates, params, endpoint=True, route=True)
-        ranked = rank(filtered, params)
+        ranked = rank(filtered, params, contexts_by_method)
 
         if len(ranked) < MIN_RESULTS:
             relaxation = "route_filter_relaxed"
             filtered = _apply_filters(candidates, params, endpoint=True, route=False)
-            ranked = rank(filtered, params)
+            ranked = rank(filtered, params, contexts_by_method)
 
         if len(ranked) < MIN_RESULTS:
             relaxation = "endpoint_and_route_filters_relaxed"
-            ranked = rank(candidates, params)[:MIN_RESULTS]
+            ranked = rank(candidates, params, contexts_by_method)[:MIN_RESULTS]
 
         if relaxation:
             logger.info("Retrieval filter relaxation applied: %s", relaxation)
@@ -161,13 +184,17 @@ class RetrievalService:
         self,
         methods: list[Method],
         params: ProtocolParameters,
+        contexts_by_method: dict[int, list[MethodValidationContext]],
     ) -> tuple[list[Recommendation], str | None]:
-        return self._search_with_relaxation(methods, params, self._rank_filter_only)
+        return self._search_with_relaxation(
+            methods, params, contexts_by_method, self._rank_filter_only
+        )
 
     def _search_semantic(
         self,
         methods: list[Method],
         params: ProtocolParameters,
+        contexts_by_method: dict[int, list[MethodValidationContext]],
     ) -> tuple[list[Recommendation], str | None]:
         scorable = [method for method in methods if method.embedding_json]
         if not scorable:
@@ -181,22 +208,27 @@ class RetrievalService:
         return self._search_with_relaxation(
             scorable,
             params,
-            lambda filtered, p: self._rank_semantic(filtered, query_vector, p),
+            contexts_by_method,
+            lambda filtered, p, contexts: self._rank_semantic(
+                filtered, query_vector, p, contexts
+            ),
         )
 
     def _rank_filter_only(
         self,
         methods: list[Method],
         params: ProtocolParameters,
+        contexts_by_method: dict[int, list[MethodValidationContext]],
     ) -> list[Recommendation]:
         scored = [(method, filter_only_score(method, params)) for method in methods]
-        return _build_recommendations(scored, params)
+        return _build_recommendations(scored, params, contexts_by_method)
 
     def _rank_semantic(
         self,
         methods: list[Method],
         query_vector: list[float],
         params: ProtocolParameters,
+        contexts_by_method: dict[int, list[MethodValidationContext]],
     ) -> list[Recommendation]:
         scored: list[tuple[Method, float]] = []
         for method in methods:
@@ -204,4 +236,4 @@ class RetrievalService:
                 continue
             score = round(cosine_similarity(query_vector, method.embedding_json), 4)
             scored.append((method, score))
-        return _build_recommendations(scored, params)
+        return _build_recommendations(scored, params, contexts_by_method)

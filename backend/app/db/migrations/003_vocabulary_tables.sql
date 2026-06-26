@@ -1,6 +1,6 @@
 -- =============================================================================
 -- 3R Assist — Migration 003: Controlled vocabulary tables (PostgreSQL)
--- Tables: endpoints, routes, application_areas
+-- Tables: endpoints, routes, study_domains
 -- Source: docs/parameter_model.md §3.1–3.3
 -- Assumes: 001_initial.sql already applied (methods, method_keywords exist)
 -- =============================================================================
@@ -42,10 +42,10 @@ CREATE TABLE routes (
 CREATE INDEX idx_routes_active ON routes (active) WHERE active = TRUE;
 
 -- ---------------------------------------------------------------------------
--- APPLICATION AREAS (parameter_model.md §3.3)
+-- STUDY DOMAINS (parameter_model.md §3.3)
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE application_areas (
+CREATE TABLE study_domains (
     code            TEXT            PRIMARY KEY,
     name_en         TEXT            NOT NULL,
     name_pt         TEXT            NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE application_areas (
     updated_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_application_areas_active ON application_areas (active) WHERE active = TRUE;
+CREATE INDEX idx_study_domains_active ON study_domains (active) WHERE active = TRUE;
 
 -- ---------------------------------------------------------------------------
 -- ROUTE ↔ ENDPOINT compatibility (parameter_model.md §3.2)
@@ -84,8 +84,8 @@ CREATE TRIGGER routes_updated_at
     BEFORE UPDATE ON routes
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE TRIGGER application_areas_updated_at
-    BEFORE UPDATE ON application_areas
+CREATE TRIGGER study_domains_updated_at
+    BEFORE UPDATE ON study_domains
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ---------------------------------------------------------------------------
@@ -229,10 +229,10 @@ INSERT INTO routes (code, name_en, name_pt, description_en, description_pt, sort
 );
 
 -- ---------------------------------------------------------------------------
--- SEED: application_areas
+-- SEED: study_domains
 -- ---------------------------------------------------------------------------
 
-INSERT INTO application_areas (code, name_en, name_pt, description_en, description_pt, sort_order) VALUES
+INSERT INTO study_domains (code, name_en, name_pt, description_en, description_pt, sort_order) VALUES
 (
     'pharma',
     'Pharmaceutical',
@@ -284,7 +284,7 @@ INSERT INTO route_endpoints (route_code, endpoint_code) VALUES
     ('in_vitro', 'phototoxicity');
 
 -- ---------------------------------------------------------------------------
--- FK constraints on methods (replaces inline CHECK on application_area)
+-- FK constraints on methods (replaces inline CHECK on study_domain)
 -- ---------------------------------------------------------------------------
 
 ALTER TABLE methods
@@ -292,19 +292,19 @@ ALTER TABLE methods
         FOREIGN KEY (endpoint_category) REFERENCES endpoints(code);
 
 ALTER TABLE methods
-    DROP CONSTRAINT methods_application_area_check;
+    DROP CONSTRAINT methods_study_domain_check;
 
 ALTER TABLE methods
-    ADD CONSTRAINT fk_methods_application_area
-        FOREIGN KEY (application_area) REFERENCES application_areas(code);
+    ADD CONSTRAINT fk_methods_study_domain
+        FOREIGN KEY (study_domain) REFERENCES study_domains(code);
 
 -- ---------------------------------------------------------------------------
 -- VERIFICATION QUERIES
 -- ---------------------------------------------------------------------------
 -- SELECT COUNT(*) FROM endpoints;           -- expect 9
 -- SELECT COUNT(*) FROM routes;            -- expect 7
--- SELECT COUNT(*) FROM application_areas;   -- expect 4
+-- SELECT COUNT(*) FROM study_domains;       -- expect 4
 -- SELECT COUNT(*) FROM route_endpoints;     -- expect 11
 -- SELECT code, name_en FROM endpoints ORDER BY sort_order;
 -- SELECT code, name_en FROM routes ORDER BY sort_order;
--- SELECT code, name_en FROM application_areas ORDER BY sort_order;
+-- SELECT code, name_en FROM study_domains ORDER BY sort_order;

@@ -17,23 +17,22 @@ def _method(
     endpoint: str,
     routes: list[str] | None,
     *,
+    method_id: int = 1,
     embedding: list[float] | None = None,
     text_for_embedding: str = "text",
 ) -> Method:
     return Method(
-        id=1,
+        id=method_id,
         slug=slug,
         name_en=slug,
         name_pt=slug,
         description_en="desc",
         description_pt="desc",
         text_for_embedding=text_for_embedding,
-        category_3r="reduction",
+        category_3r=["reduction"],
         endpoint_category=endpoint,
-        application_area="general",
+        study_domain="general",
         source_db="NICEATM",
-        validation_status="validated",
-        jurisdiction="both",
         routes_applicable=routes,
         embedding_json=embedding,
         active=True,
@@ -47,12 +46,15 @@ class FakeMethodRepository(MethodRepository):
     async def list_active(self) -> list[Method]:
         return self._methods
 
+    async def list_active_with_contexts(self):
+        return self._methods, {}
+
 
 def test_build_query_text_includes_matching_fields():
     params = ProtocolParameters(
         endpoint_category="acute_toxicity",
         route=["oral"],
-        application_area="general",
+        study_domain="general",
         procedure_text="LD50 single dose",
     )
     text = build_query_text(params)
@@ -68,10 +70,10 @@ def test_cosine_similarity_for_identical_vectors():
 
 def test_filter_only_retrieval_without_embeddings():
     methods = [
-        _method("oral-a", "acute_toxicity", ["oral"]),
-        _method("oral-b", "acute_toxicity", ["oral"]),
-        _method("oral-c", "acute_toxicity", ["oral"]),
-        _method("dermal-a", "skin_irritation", ["dermal"]),
+        _method("oral-a", "acute_toxicity", ["oral"], method_id=1),
+        _method("oral-b", "acute_toxicity", ["oral"], method_id=2),
+        _method("oral-c", "acute_toxicity", ["oral"], method_id=3),
+        _method("dermal-a", "skin_irritation", ["dermal"], method_id=4),
     ]
     service = RetrievalService(
         FakeMethodRepository(methods),
@@ -81,7 +83,7 @@ def test_filter_only_retrieval_without_embeddings():
     params = ProtocolParameters(
         endpoint_category="acute_toxicity",
         route=["oral"],
-        application_area="general",
+        study_domain="general",
         procedure_text="LD50",
     )
 
@@ -102,7 +104,7 @@ def test_filter_only_score_uses_procedure_overlap():
     params = ProtocolParameters(
         endpoint_category="acute_toxicity",
         route=["oral"],
-        application_area="general",
+        study_domain="general",
         procedure_text="LD50 fixed dose oral",
     )
     assert filter_only_score(method, params) > filter_only_score(
@@ -117,10 +119,10 @@ def test_retrieval_filters_endpoint_and_route():
     dermal_vector = embedder.embed("skin_irritation dermal general")
 
     methods = [
-        _method("oral-a", "acute_toxicity", ["oral"], embedding=oral_vector),
-        _method("oral-b", "acute_toxicity", ["oral"], embedding=oral_vector),
-        _method("oral-c", "acute_toxicity", ["oral"], embedding=oral_vector),
-        _method("dermal-a", "skin_irritation", ["dermal"], embedding=dermal_vector),
+        _method("oral-a", "acute_toxicity", ["oral"], method_id=1, embedding=oral_vector),
+        _method("oral-b", "acute_toxicity", ["oral"], method_id=2, embedding=oral_vector),
+        _method("oral-c", "acute_toxicity", ["oral"], method_id=3, embedding=oral_vector),
+        _method("dermal-a", "skin_irritation", ["dermal"], method_id=4, embedding=dermal_vector),
     ]
     service = RetrievalService(
         FakeMethodRepository(methods),
@@ -130,7 +132,7 @@ def test_retrieval_filters_endpoint_and_route():
     params = ProtocolParameters(
         endpoint_category="acute_toxicity",
         route=["oral"],
-        application_area="general",
+        study_domain="general",
         procedure_text="LD50",
     )
 
@@ -146,9 +148,9 @@ def test_retrieval_relaxes_route_filter_for_minimum_results():
     vector = embedder.embed("acute_toxicity oral general")
 
     methods = [
-        _method("a", "acute_toxicity", ["oral"], embedding=vector),
-        _method("b", "acute_toxicity", ["oral"], embedding=vector),
-        _method("c", "acute_toxicity", ["oral"], embedding=vector),
+        _method("a", "acute_toxicity", ["oral"], method_id=1, embedding=vector),
+        _method("b", "acute_toxicity", ["oral"], method_id=2, embedding=vector),
+        _method("c", "acute_toxicity", ["oral"], method_id=3, embedding=vector),
     ]
     service = RetrievalService(
         FakeMethodRepository(methods),
@@ -158,7 +160,7 @@ def test_retrieval_relaxes_route_filter_for_minimum_results():
     params = ProtocolParameters(
         endpoint_category="acute_toxicity",
         route=["intraperitoneal"],
-        application_area="general",
+        study_domain="general",
     )
 
     recommendations, relaxation = asyncio.run(service.search(params))

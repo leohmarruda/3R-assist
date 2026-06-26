@@ -1,5 +1,5 @@
 import {
-  APPLICATION_AREAS,
+  STUDY_DOMAINS,
   ENDPOINT_CATEGORIES,
   ROUTES,
   SPECIES,
@@ -34,14 +34,14 @@ export const MATCHING_FIELDS = [
     confidenceKey: 'route',
   },
   {
-    key: 'application_area',
-    labelKey: 's2.fields.applicationArea',
+    key: 'study_domain',
+    labelKey: 's2.fields.studyDomain',
     type: 'select',
-    options: APPLICATION_AREAS,
-    enumPrefix: 'applicationArea',
+    options: STUDY_DOMAINS,
+    enumPrefix: 'studyDomain',
     required: true,
-    evidenceKey: 'application_area',
-    confidenceKey: 'application_area',
+    evidenceKey: 'study_domain',
+    confidenceKey: 'study_domain',
   },
   {
     key: 'procedure_text',
@@ -133,7 +133,7 @@ export function normalizeParamsFromExperiment(experiment) {
   return normalizeParams({
     endpoint_category: experiment?.endpoint_category ?? params.endpoint_category,
     route: raw.route ?? params.route,
-    application_area: raw.application_area ?? params.application_area,
+    study_domain: raw.study_domain ?? params.study_domain,
     procedure_text: raw.procedure_text ?? params.procedure_text,
     species: raw.species ?? params.species,
     animal_counts: raw.animal_counts,
@@ -152,7 +152,7 @@ export function normalizeParams(params) {
   return {
     endpoint_category: params?.endpoint_category ?? '',
     route: formatRouteForForm(params?.route),
-    application_area: params?.application_area ?? 'general',
+    study_domain: params?.study_domain ?? 'general',
     procedure_text: params?.procedure_text ?? '',
     species: params?.species ?? '',
     animal_counts: normalizeAnimalCounts(
@@ -174,7 +174,7 @@ export function serializeParams(form) {
   return {
     endpoint_category: form.endpoint_category || null,
     route: parseRoutes(form.route),
-    application_area: form.application_area || 'general',
+    study_domain: form.study_domain || 'general',
     procedure_text: form.procedure_text?.trim() || null,
     species: form.species || null,
     animal_counts,
@@ -190,14 +190,14 @@ export function serializeParams(form) {
 
 export function emptyParameterKeys(params) {
   const keys = []
-  if (!params?.application_area?.trim()) keys.push('application_area')
+  if (!params?.study_domain?.trim()) keys.push('study_domain')
   return keys
 }
 
 export function extractEvidence(raw = {}) {
   return {
     route: raw.route_evidence ?? null,
-    application_area: raw.application_area_evidence ?? null,
+    study_domain: raw.study_domain_evidence ?? null,
     procedure_text: raw.procedure_text_evidence ?? null,
     species: raw.species_evidence ?? null,
     animal_counts: raw.animal_counts_evidence ?? null,
@@ -208,7 +208,7 @@ export function extractEvidence(raw = {}) {
 export function extractFieldConfidence(raw = {}) {
   return {
     route: raw.route_confidence ?? null,
-    application_area: raw.application_area_confidence ?? null,
+    study_domain: raw.study_domain_confidence ?? null,
     procedure_text: raw.procedure_text_confidence ?? null,
     species: raw.species_confidence ?? null,
     animal_counts: raw.animal_counts_confidence ?? null,

@@ -25,7 +25,7 @@ EXPECTED_PRENATAL_ALLULOSE = ExpectedExtraction(
     study_type_keywords=("prenatal", "developmental", "oecd", "414"),
     endpoint_category=None,
     route=["oral"],
-    application_area={"chemical_safety", "general"},
+    study_domain={"chemical_safety", "general"},
     procedure_keywords=(
         "prenatal",
         "developmental",

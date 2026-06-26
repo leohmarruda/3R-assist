@@ -89,9 +89,9 @@ Per-field confidence scale:
       "route_evidence": "exact quote from text, MAX 15 WORDS" or null,
       "route_confidence": "high"|"medium"|"low" or null if route is null,
 
-      "application_area": one of [pharma, cosmetics, chemical_safety, general],
-      "application_area_evidence": "exact quote from text, MAX 15 WORDS" or null,
-      "application_area_confidence": "high"|"medium"|"low",
+      "study_domain": one of [pharma, cosmetics, chemical_safety, general],
+      "study_domain_evidence": "exact quote from text, MAX 15 WORDS" or null,
+      "study_domain_confidence": "high"|"medium"|"low",
       // Use "general" when: (a) the study is validating a method rather than
       // testing a specific product class; (b) test substances span multiple
       // product categories; (c) no single application context is declared.

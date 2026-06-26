@@ -9,7 +9,7 @@ from typing import Literal
 
 from app.models.protocol import (
     AnimalCounts,
-    ApplicationArea,
+    StudyDomain,
     EndpointCategory,
     RawExtraction,
     Route,
@@ -88,13 +88,13 @@ class StubLLMAdapter(LLMAdapter):
         species = self._extract_species(lowered)
         animal_counts = self._extract_animal_counts(lowered)
         regulatory = self._extract_regulatory(lowered)
-        application_area = self._extract_application_area(lowered)
+        study_domain = self._extract_study_domain(lowered)
         procedure_text = self._extract_procedure_text(normalized, study_type)
 
         raw = RawExtraction(
             study_type=study_type,
             route=routes,
-            application_area=application_area,
+            study_domain=study_domain,
             procedure_text=procedure_text,
             species=species,
             animal_counts=animal_counts,
@@ -192,7 +192,7 @@ class StubLLMAdapter(LLMAdapter):
         return None
 
     @staticmethod
-    def _extract_application_area(text: str) -> ApplicationArea:
+    def _extract_study_domain(text: str) -> StudyDomain:
         if re.search(r"vaccine|pharma|medicinal|drug safety", text):
             return "pharma"
         if re.search(r"cosmetic|higiene pessoal", text):
@@ -342,10 +342,10 @@ def _coerce_animal_counts(payload: dict) -> AnimalCounts | None:
     return None
 
 
-def _coerce_application_area(payload: dict) -> None:
-    area = payload.get("application_area")
-    if area is None or (isinstance(area, str) and not area.strip()):
-        payload["application_area"] = "general"
+def _coerce_study_domain(payload: dict) -> None:
+    domain = payload.get("study_domain")
+    if domain is None or (isinstance(domain, str) and not domain.strip()):
+        payload["study_domain"] = "general"
 
 
 def _is_null_route_marker(value: object) -> bool:
@@ -409,7 +409,7 @@ def _raw_from_experiment_item(item: object) -> RawExtraction | None:
     payload.pop("endpoint_category", None)
     payload.pop("confidence", None)
     payload.pop("raw_text_excerpt", None)
-    _coerce_application_area(payload)
+    _coerce_study_domain(payload)
     _coerce_route(payload)
     _coerce_species(payload)
     payload["animal_counts"] = _coerce_animal_counts(payload)

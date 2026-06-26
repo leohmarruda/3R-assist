@@ -23,7 +23,7 @@ Registrar como ADR se afetar o contrato do `POST /analyze`.
 |---|---|---|---|---|
 | `endpoint_category` | enum (ver §3.1) | sim | **matching** | Hard filter — só retorna métodos com o mesmo endpoint |
 | `route` | enum (ver §3.2), nullable | não | **matching** | Soft filter — exclui métodos com via incompatível |
-| `application_area` | enum (ver §3.3) | sim | **matching** | Soft filter — prioriza métodos do mesmo contexto |
+| `study_domain` | enum (ver §3.3) | sim | **matching** | Soft filter — prioriza métodos do mesmo domínio de aplicação |
 | `procedure_text` | string livre | não | **matching** | Concatenado ao embedding do protocolo |
 | `species` | enum (ver §3.4), nullable | não | **display** | Exibido no S2; contexto para o usuário |
 | `n_animals` | integer, nullable | não | **display** | Exibido no S2; contexto para o usuário |
@@ -98,23 +98,37 @@ Quando o protocolo usa múltiplas vias (ex: `p.o. / i.p.`):
 Quando `route` é `null`:
 → Sem filtro de via; o RetrievalService retorna todos os métodos do endpoint
 
-### 3.3 `application_area`
+### 3.3 `study_domain`
 
-Contexto de uso do protocolo. Determina relevância de indicadores de jurisdição.
+Domínio de aplicação do protocolo. Responde à pergunta "em qual domínio este estudo existe?" — não implica que um framework regulatório necessariamente existe. Determina relevância de indicadores de jurisdição e priorização de métodos no RetrievalService.
+
+> **ADR-020:** renomeado de `application_area` para `study_domain`. Ver `decisions.md`.
+
+**Vocabulário MVP (Phase 1–2):**
 
 | Valor | Quando usar |
 |---|---|
-| `pharma` | segurança farmacêutica, testes regulatórios de medicamentos, vacinas |
+| `pharma` | segurança farmacêutica, testes regulatórios de medicamentos, vacinas, dispositivos médicos |
 | `cosmetics` | cosméticos, produtos de higiene pessoal |
 | `chemical_safety` | substâncias químicas, agrotóxicos, produtos industriais, ingredientes alimentares (food additive safety) |
-| `general` | pesquisa básica sem aplicação regulatória específica; quando não determinável; ver regras abaixo |
+| `general` | fallback — múltiplos domínios, não determinável, ou validação de método alternativo |
+
+**Vocabulário Phase 3 (candidatos — pendente validação por Karynn):**
+
+| Valor | Quando usar |
+|---|---|
+| `behavioral` | neurociência comportamental, modelos de ansiedade, depressão, dor, cognição, vício |
+| `education` | treinamento cirúrgico, demonstração de técnicas, ensino de procedimentos |
+| `basic_research` | pesquisa sem aplicação regulatória ou domínio setorial declarado |
+
+Esses valores não devem ser adicionados ao vocabulário ativo até que (a) Karynn confirme que protocolos do piloto os requerem e (b) existam métodos correspondentes no banco. Adicionar valores sem cobertura no banco gera expectativa falsa no S2.
 
 **Regra de fallback:** se não for possível determinar com segurança → `general`.
 
 **Regras adicionais para `general`:**
 1. O estudo valida ou caracteriza um método alternativo (o objeto é o método em si, não um produto específico). Ex: EVEIT validação com BAC + lágrima artificial → `general`.
-2. As substâncias testadas pertencem a múltiplas categorias de aplicação sem uma predominante.
-3. O contexto é pesquisa acadêmica básica sem declaração de propósito regulatório.
+2. As substâncias testadas pertencem a múltiplos domínios sem um predominante.
+3. Nenhum dos valores MVP se aplica com segurança.
 
 **Regra para `chemical_safety` vs. `pharma`/`cosmetics`:** o campo descreve o contexto do estudo, não da substância isolada. BAC (benzalkonium chloride) é usado em cosméticos E em fármacos E como preservante industrial — a presença de BAC sozinha não determina `cosmetics`.
 
@@ -173,9 +187,9 @@ class RawExtraction:
     route_evidence:              Optional[str]
     route_confidence:            Optional[Literal["high","medium","low"]]  # null if route is null
 
-    application_area:            str            # §3.3 controlled vocab; 'general' if not determinable
-    application_area_evidence:   Optional[str]
-    application_area_confidence: Optional[Literal["high","medium","low"]]
+    study_domain:                str            # §3.3 controlled vocab; 'general' if not determinable
+    study_domain_evidence:       Optional[str]
+    study_domain_confidence:     Optional[Literal["high","medium","low"]]
 
     procedure_text:              Optional[str]  # max 30 words; English
     procedure_text_evidence:     Optional[str]
@@ -291,7 +305,7 @@ Quando `len(experiments) > 1`, S2 e S3 exibem abas por experimento (ADR-019) —
 O embedding do protocolo (usado no cosine similarity) é gerado sobre:
 
 ```
-{endpoint_category} {raw.procedure_text} {raw.application_area}
+{endpoint_category} {raw.procedure_text} {raw.study_domain}
 ```
 
 Exemplo (protocolo do protótipo):
@@ -350,7 +364,7 @@ AnalyzeResponse(experiments=[
         raw=RawExtraction(
             study_type          = "acute toxicity LD50 study",
             route               = ["oral", "intraperitoneal"],
-            application_area    = "general",
+            study_domain        = "general",
             procedure_text      = "Single-dose acute toxicity LD50 Litchfield-Wilcoxon",
             species             = "rat",
             animal_counts         = AnimalCounts(male=60),
@@ -506,12 +520,12 @@ Per-field confidence scale:
       "route_evidence": "exact quote from text, MAX 15 WORDS" or null,
       "route_confidence": "high"|"medium"|"low" or null if route is null,
 
-      "application_area": one of [pharma, cosmetics, chemical_safety, general],
-      "application_area_evidence": "exact quote from text, MAX 15 WORDS" or null,
-      "application_area_confidence": "high"|"medium"|"low",
+      "study_domain": one of [pharma, cosmetics, chemical_safety, general],
+      "study_domain_evidence": "exact quote from text, MAX 15 WORDS" or null,
+      "study_domain_confidence": "high"|"medium"|"low",
       // Use "general" when: (a) the study is validating a method rather than
       // testing a specific product class; (b) test substances span multiple
-      // product categories; (c) no single application context is declared.
+      // domains; (c) no single application domain is declared.
       // The identity of the test substance alone does not determine this field —
       // BAC is used in pharma, cosmetics, and industrial contexts equally.
 
@@ -599,8 +613,8 @@ AnalyzeResponse(experiments=[
             study_type               = "subchronic inhalation toxicity study",
             route                    = ["inhalation"],
             route_evidence           = "exposed to CB in the nose-only inhalation chamber",
-            application_area         = "chemical_safety",
-            application_area_evidence= "occupational exposure limit of 3.5 mg/m³ CB per 8 hrs work shift (established by OSHA and NIOSH)",
+            study_domain             = "chemical_safety",
+            study_domain_evidence    = "occupational exposure limit of 3.5 mg/m³ CB per 8 hrs work shift (established by OSHA and NIOSH)",
             procedure_text           = "90-day repeated-dose nose-only inhalation exposure to carbon black; lung function, histopathology, apoptosis, cytokine analysis",
             procedure_text_evidence  = "exposed to CB in the nose-only inhalation chamber at 30 mg/m³ for 6 hrs/day for 90 days",
             species                  = "rat",
@@ -633,10 +647,9 @@ AnalyzeResponse(experiments=[
             study_type               = "acute toxicity LD50 study",
             route                    = ["oral", "intraperitoneal"],
             route_evidence           = "administered a single dose of T. parthenium by two routes of administration—p.o. and i.p.",
-            application_area         = "general",
-            application_area_evidence= None,
+            study_domain             = "general",
+            study_domain_evidence    = None,
             procedure_text           = "Single-dose acute toxicity LD50 study by Litchfield-Wilcoxon method in Wistar rats, p.o. and i.p.",
-            procedure_text_evidence  = "LD50-values were evaluated according to the Litchfield and Wilcoxon method",
             species                  = "rat",
             species_evidence         = "60 male Wistar rats",
             animal_counts            = AnimalCounts(female=None, male=60, total=None, per_group=None),
@@ -652,8 +665,8 @@ AnalyzeResponse(experiments=[
             study_type               = "28-day subacute repeated-dose oral toxicity study",
             route                    = ["oral"],
             route_evidence           = "treated once a day orally by gastric tube for 28 days",
-            application_area         = "general",
-            application_area_evidence= None,
+            study_domain             = "general",
+            study_domain_evidence    = None,
             procedure_text           = "28-day repeated-dose oral toxicity with hematological, serum biochemical, and histopathological evaluation",
             procedure_text_evidence  = "treated once a day orally by gastric tube for 28 days... blood samples were drawn for the examination of hematological and serum biochemical parameters",
             species                  = "rat",
@@ -680,14 +693,14 @@ AnalyzeResponse(experiments=[
 
 ---
 
-### 11.3 EVEIT — sistema ex vivo (caso de disambiguação de rota e application_area)
+### 11.3 EVEIT — sistema ex vivo (caso de disambiguação de rota e study_domain)
 
 **Fonte:** Materials & Methods do EVEIT (Ex Vivo Eye Irritation Test) usando córneas
 bovinas de abatedouro.
 
 **Casos de falha conhecidos em outros modelos:**
 - `route: in_vitro` (errado) em vez de `ocular` — o sistema ex vivo não determina a rota; a rota é o contato da substância com o tecido. Ver §3.2 tabela de disambiguação.
-- `application_area: cosmetics` (errado) em vez de `general` — BAC presente no texto não determina `cosmetics`. Ver §3.3 regra para estudos de validação de método.
+- `study_domain: cosmetics` (errado) em vez de `general` — BAC presente no texto não determina `cosmetics`. Ver §3.3 regra para estudos de validação de método.
 - top-level `confidence` na saída do LLM (errado) — proibido; usar `{field}_confidence` por campo (ADR-018).
 
 **AnalyzeResponse esperada:**
@@ -702,10 +715,10 @@ AnalyzeResponse(experiments=[
             # route = "ocular" because the test substance contacts the corneal
             # surface. The perfusion chamber / MEM medium is the biological system,
             # not the route. See §3.2 ex vivo disambiguation table.
-            application_area         = "general",
-            application_area_evidence= None,
-            application_area_confidence = "medium",
-            # application_area = "general" because: (a) the study characterizes
+            study_domain             = "general",
+            study_domain_evidence    = None,
+            study_domain_confidence  = "medium",
+            # study_domain = "general" because: (a) the study characterizes
             # the EVEIT method itself, not a product class; (b) test substances
             # span pharma (HYLO-LASOP), preservative (BAC), and saline control.
             # BAC's presence alone does not imply cosmetics. See §3.3 rule 1.

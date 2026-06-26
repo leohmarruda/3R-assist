@@ -11,6 +11,20 @@ from app.services.retrieval import RetrievalService
 router = APIRouter(tags=["search"])
 
 
+def _matches_three_r_filter(recommendation: Recommendation, three_r_class: str) -> bool:
+    return recommendation.method.has_three_r(three_r_class)
+
+
+def _matches_jurisdiction_filter(
+    recommendation: Recommendation,
+    jurisdiction: str,
+) -> bool:
+    return any(
+        context.jurisdiction == jurisdiction
+        for context in recommendation.validation_contexts
+    )
+
+
 def _apply_filters(
     recommendations: list[Recommendation],
     filters: SearchFilters | None,
@@ -23,13 +37,13 @@ def _apply_filters(
         filtered = [
             item
             for item in filtered
-            if item.method.category_3r == filters.three_r_class
+            if _matches_three_r_filter(item, filters.three_r_class)
         ]
     if filters.jurisdiction is not None:
         filtered = [
             item
             for item in filtered
-            if item.method.jurisdiction == filters.jurisdiction
+            if _matches_jurisdiction_filter(item, filters.jurisdiction)
         ]
     if filters.endpoint is not None:
         filtered = [

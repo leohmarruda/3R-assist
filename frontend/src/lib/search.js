@@ -50,11 +50,44 @@ export function formatOecdReference(ref) {
   return `OECD ${trimmed}`
 }
 
+export function primaryThreeR(category3r) {
+  const values = Array.isArray(category3r) ? category3r : [category3r].filter(Boolean)
+  for (const preferred of ['replacement', 'reduction', 'refinement']) {
+    if (values.includes(preferred)) return preferred
+  }
+  return values[0] ?? 'replacement'
+}
+
+export function formatThreeRLabel(category3r, t) {
+  const values = Array.isArray(category3r) ? category3r : [category3r].filter(Boolean)
+  return values.map((value) => t(`s3.threeR.${value}`)).join(' · ')
+}
+
+export function primaryValidationContext(contexts = []) {
+  if (!contexts.length) return null
+  const priority = ['brazil', 'oecd', 'eu', 'us']
+  for (const jurisdiction of priority) {
+    const match = contexts.find((context) => context.jurisdiction === jurisdiction)
+    if (match) return match
+  }
+  return contexts[0]
+}
+
+export function formatJurisdictionBadges(contexts = [], t) {
+  const jurisdictions = [...new Set(contexts.map((context) => context.jurisdiction))]
+  return jurisdictions.map((value) => t(`s3.jurisdiction.${value}`)).join(' · ')
+}
+
+export function regulatoryUrlFromContexts(contexts = []) {
+  const primary = primaryValidationContext(contexts)
+  return primary?.regulatory_url ?? null
+}
+
 export function formatMatchedParams(matchedParams, t) {
   const labels = {
     endpoint_category: t('s2.fields.endpointCategory'),
     route: t('s2.fields.route'),
-    application_area: t('s2.fields.applicationArea'),
+    study_domain: t('s2.fields.studyDomain'),
   }
   return (matchedParams ?? []).map((key) => labels[key] ?? key)
 }

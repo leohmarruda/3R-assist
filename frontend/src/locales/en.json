@@ -49,7 +49,7 @@
     "backToParams": "Back to parameters",
     "searchCta": "Search alternatives",
     "searching": "Searching…",
-    "incompleteWarning": "Application area is required before searching.",
+    "incompleteWarning": "Study domain is required before searching.",
     "identificationSection": "Study identification",
     "protocolSourceLabel": "Original protocol",
     "protocolHighlightLegend": "Highlighted = extraction evidence",
@@ -87,7 +87,7 @@
       "studyType": "Study type (extracted)",
       "endpointCategory": "Endpoint category (database)",
       "route": "Route",
-      "applicationArea": "Application area",
+      "studyDomain": "Study domain",
       "procedureText": "Procedure text",
       "species": "Species",
       "regulatory": "Regulatory context",
@@ -120,7 +120,7 @@
         "inhalation": "Inhalation",
         "in_vitro": "In vitro"
       },
-      "applicationArea": {
+      "studyDomain": {
         "pharma": "Pharmaceutical",
         "cosmetics": "Cosmetics",
         "chemical_safety": "Chemical safety",
@@ -161,8 +161,9 @@
     },
     "jurisdiction": {
       "brazil": "Brazil",
-      "international": "International",
-      "both": "Brazil / International"
+      "eu": "EU",
+      "us": "US",
+      "oecd": "OECD"
     },
     "validationStatus": {
       "validated": "Validated",

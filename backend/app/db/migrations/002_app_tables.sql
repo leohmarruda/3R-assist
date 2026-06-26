@@ -42,7 +42,7 @@ CREATE INDEX idx_magic_link_expires    ON magic_link_tokens (expires_at)
 -- user_id NULL = anonymous session
 -- ---------------------------------------------------------------------------
 -- extracted_params follows parameter_model.md ExtractionResult schema:
---   { endpoint_category, route, application_area, procedure_text,
+--   { endpoint_category, route, study_domain, procedure_text,
 --     species, n_animals, regulatory, confidence, raw_text_excerpt }
 --
 -- results_snapshot: array of { method_id, slug, score } captured at query time.

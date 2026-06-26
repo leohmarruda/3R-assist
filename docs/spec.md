@@ -21,7 +21,7 @@
 |---|---|---|
 | F01 | Free-text protocol input (PT/EN) | Single textarea; no required fields |
 | F02 | LLM-based parameter extraction | Returns `AnalyzeResponse { experiments: ExtractionResult[] }` per `docs/parameter_model.md`. LLM produces `RawExtraction` (strict extraction only, no inference; every non-null field has a paired evidence string and `{field}_confidence`; `study_type` as free text). Application code maps `study_type` → `endpoint_category` via §4.1 lookup. See ADR-014–018 |
-| F03 | Parameter display and inline correction | S2 displays: `study_type` (what the LLM found) + `endpoint_category` (what the database covers, or "Not covered" if null); editable fields for route, application_area, procedure_text, species, animal_counts, regulatory; per-field `{field}_confidence` badge (High/Medium/Low) with "show evidence" toggle (right-aligned) per field; original protocol text in a side panel with evidence spans highlighted; `notes` displayed below parameters when non-null. When `len(experiments) > 1`, S2 shows tabs — one per experiment — each with its own editable params and evidence (ADR-014, ADR-019). |
+| F03 | Parameter display and inline correction | S2 displays: `study_type` (what the LLM found) + `endpoint_category` (what the database covers, or "Not covered" if null); editable fields for route, study_domain, procedure_text, species, animal_counts, regulatory; per-field `{field}_confidence` badge (High/Medium/Low) with "show evidence" toggle (right-aligned) per field; original protocol text in a side panel with evidence spans highlighted; `notes` displayed below parameters when non-null. When `len(experiments) > 1`, S2 shows tabs — one per experiment — each with its own editable params and evidence (ADR-014, ADR-019). |
 | F04 | Ranked recommendations | S3 calls `POST /search` after S2 confirmation. Results sorted by relevance score; each card shows 3Rs class badge, **Match** score (%), jurisdiction, validation status, matched parameters, primary source link, and OECD/regulatory link (with `oecd_tg_ref` when present, e.g. "OECD / regulatory (OECD TG 439)"); cards with score ≤ 65% at reduced opacity (ADR-011). When `len(experiments) > 1`, S3 shows tabs with per-experiment summary and results (ADR-019). |
 | F05 | 3Rs classification per result | Replacement / Reduction / Refinement label on each recommendation |
 | F06 | Jurisdictional validity indicator | Brazil / International / Both per result |
@@ -61,7 +61,7 @@ Six primary screens. Detailed mockups in `/design/`. Nav has two primary items o
 | Screen | Purpose | Key interactions |
 |---|---|---|
 | **S1 — Input** | Protocol submission | Free-text area; PT/EN language toggle inside the input shell (pills in top bar of textarea — not a global page toggle); submit CTA; link to S4 below CTA; anonymous bypass as low-prominence text below a divider |
-| **S2 — Parameters** | Extracted parameter review | Per-field confidence indicator alongside "show evidence" toggle (ADR-018); `study_type` + `endpoint_category` at top (ADR-015); editable fields; protocol text side panel with evidence highlighting; when `len(experiments) > 1`, experiment tabs switch the active parameter set (ADR-019); "Search alternatives" triggers `POST /search` for **all** experiments in parallel; incomplete application_area blocks search |
+| **S2 — Parameters** | Extracted parameter review | Per-field confidence indicator alongside "show evidence" toggle (ADR-018); `study_type` + `endpoint_category` at top (ADR-015); editable fields; protocol text side panel with evidence highlighting; when `len(experiments) > 1`, experiment tabs switch the active parameter set (ADR-019); "Search alternatives" triggers `POST /search` for **all** experiments in parallel; incomplete study_domain blocks search |
 | **S3 — Results** | Ranked recommendations | Back link to S2; when `len(experiments) > 1`, experiment tabs switch per-experiment protocol summary and result list (ADR-019); horizontal filter bar (3Rs class, jurisdiction); cards ordered by relevance with **Match** % label; score ≤ 65% at reduced opacity (ADR-011); each card: method name, 3Rs badge, jurisdiction, validation status, matched params, primary source link, OECD/regulatory link with `oecd_tg_ref`; filter relaxation notice when Minimum Results Rule fires; export/feedback/suggest-method links deferred |
 | **S4 — Direct Search** | Filter-based discovery | Persistent sidebar filter panel (3Rs class, endpoint, application area, jurisdiction) — sidebar justified by iterative filter comparison workflow; unranked result list (no embedding step) with count of total methods |
 | **S5 — Account / History** | Query log and exports | Registered users only — anonymous users redirected to S1 with registration invite; query list with date, protocol snippet, result count; inline accordion expansion; PDF/CSV export per query |
@@ -147,22 +147,53 @@ name_en             TEXT NOT NULL
 name_pt             TEXT NOT NULL
 description_en      TEXT NOT NULL
 description_pt      TEXT NOT NULL
-text_for_embedding  TEXT NOT NULL                 -- exact string used at embed time
-category_3r         TEXT NOT NULL                 -- 'replacement' | 'reduction' | 'refinement'
+text_for_embedding  TEXT NOT NULL                 -- exact string used at embed time; English only
+category_3r         JSONB NOT NULL                -- e.g. '["replacement"]', '["reduction","refinement"]' (ADR-021)
 endpoint_category   TEXT NOT NULL                 -- see parameter_model.md §3.1 vocabulary
-application_area    TEXT NOT NULL                 -- 'pharma' | 'cosmetics' | 'chemical_safety' | 'general'
-oecd_tg_ref         TEXT                          -- e.g. 'TG 439', 'GD 129'
-source_db           TEXT NOT NULL                 -- 'ECVAM_DBALM' | 'NICEATM' | 'FARMACOPEIA_BR' | 'TSAR'
-validation_status   TEXT NOT NULL                 -- 'validated' | 'accepted' | 'emerging'
-jurisdiction        TEXT NOT NULL                 -- 'brazil' | 'international' | 'both'
-jurisdiction_notes  TEXT
-primary_lit_url     TEXT
-regulatory_url      TEXT
+study_domain        TEXT NOT NULL                 -- 'general' | 'pharma' | 'cosmetics' | 'chemical_safety' (ADR-020)
+oecd_tg_ref         TEXT                          -- e.g. 'TG 439', 'GD 129'; NULL for non-OECD methods
+ncit_id             TEXT                          -- NCI Thesaurus concept ID; NULL until Karynn maps
+source_db           TEXT NOT NULL                 -- 'OECD_TG' | 'ECVAM_DBALM' | 'NICEATM' | 'FARMACOPEIA_BR' | 'TSAR'
 routes_applicable   JSONB                         -- e.g. '["oral"]', '["dermal"]'; NULL = route-agnostic
 embedding_json      JSONB                         -- 384-dim float array; NULL until embed_methods.py runs
 active              BOOLEAN NOT NULL DEFAULT FALSE
 created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+> `validation_status`, `jurisdiction`, `jurisdiction_notes`, `primary_lit_url`, `regulatory_url` removed — see **MethodValidationContext** below (ADR-022).
+
+**MethodValidationContext** *(validation status and jurisdiction per method × study_domain × regulatory framework)*
+```
+id                SERIAL PRIMARY KEY
+method_id         INTEGER NOT NULL REFERENCES methods(id) ON DELETE CASCADE
+study_domain      TEXT    NOT NULL   -- 'general' | 'pharma' | 'cosmetics' | 'chemical_safety'
+jurisdiction      TEXT    NOT NULL   -- 'brazil' | 'eu' | 'us' | 'oecd'
+validation_status TEXT    NOT NULL   -- 'validated' | 'accepted' | 'emerging'
+regulatory_body   TEXT               -- 'CONCEA' | 'ANVISA' | 'ECHA' | 'EMA' | 'EPA' | 'FDA' | 'ICCVAM' | 'OECD'
+regulatory_ref    TEXT               -- e.g. 'RN 18/2014 Art. 2', 'TG 439', 'Reg 1223/2009'
+regulatory_url    TEXT
+notes             TEXT
+created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+UNIQUE (method_id, study_domain, jurisdiction)
+```
+
+**Jurisdiction vocabulary (ADR-022):**
+- `brazil` — CONCEA / ANVISA / MAPA recognition
+- `eu` — ECHA (REACH), EMA (pharma), EU Cosmetics Regulation 1223/2009, EFSA
+- `us` — FDA, EPA, ICCVAM / NICEATM
+- `oecd` — adopted as OECD Test Guideline; acceptance by 38 member countries subject to national adoption
+
+**RetrievalService join pattern:**
+```sql
+SELECT DISTINCT m.*
+FROM methods m
+WHERE m.active = TRUE
+  AND EXISTS (
+    SELECT 1 FROM method_validation_contexts mvc
+    WHERE mvc.method_id = m.id
+      AND (mvc.study_domain = :study_domain OR mvc.study_domain = 'general')
+      AND (:jurisdiction IS NULL OR mvc.jurisdiction = :jurisdiction)
+  )
 ```
 
 **MethodKeyword** *(synonym dictionary for vocabulary bridging)*
@@ -234,7 +265,7 @@ reviewed_at     TIMESTAMPTZ
 
 At 25 methods, full corpus embedding comparison is trivially fast. No vector index or approximate nearest-neighbor library needed. Algorithm (see `docs/parameter_model.md` §6 for full specification):
 
-1. Embed the confirmed protocol parameters (`endpoint_category` + `procedure_text` + `application_area` + routes) using `sentence-transformers`.
+1. Embed the confirmed protocol parameters (`endpoint_category` + `procedure_text` + `study_domain` + routes) using `sentence-transformers`.
 2. **Hard filter:** retain only methods where `endpoint_category` matches the protocol (if not null).
 3. **Soft filter:** retain methods where `routes_applicable IS NULL` OR `routes_applicable` contains any protocol route (if route not null).
 4. Load filtered method embeddings from the database (in-memory, negligible at this scale).
@@ -449,8 +480,8 @@ All interfaces defined here before any handler is written. OpenAPI spec generate
         "study_type": string,
         "route": ["oral","intraperitoneal"]|null,
         "route_evidence": string|null,
-        "application_area": "pharma"|"cosmetics"|"chemical_safety"|"general",
-        "application_area_evidence": string|null,
+        "study_domain": "pharma"|"cosmetics"|"chemical_safety"|"general",
+        "study_domain_evidence": string|null,
         "procedure_text": string|null,
         "procedure_text_evidence": string|null,
         "species": "rat"|"mouse"|...|null,
@@ -490,15 +521,15 @@ All interfaces defined here before any handler is written. OpenAPI spec generate
   "params": {
     "endpoint_category": "acute_toxicity"|null,
     "route": ["oral"]|null,
-    "application_area": "general",
+    "study_domain": "general",
     "procedure_text": string|null,
     "species": "rat"|null,
     "n_animals": integer|null,
     "regulatory": boolean|null
   },
   "filters": {
-    "three_r_class": "replacement"|"reduction"|"refinement"|null,
-    "jurisdiction": "brazil"|"international"|"both"|null,
+    "three_r_class": "replacement"|"reduction"|"refinement"|null,   -- JSONB @> match (OR semantics)
+    "jurisdiction": "brazil"|"eu"|"us"|"oecd"|null,                 -- ADR-022
     "endpoint": "acute_toxicity"|...|null
   },
   "lang": "pt"|"en"|null
@@ -516,14 +547,21 @@ All interfaces defined here before any handler is written. OpenAPI spec generate
         "name_pt": string,
         "description_en": string,
         "description_pt": string,
-        "category_3r": "replacement"|"reduction"|"refinement",
+        "category_3r": ["replacement"|"reduction"|"refinement"],   -- array (ADR-021)
         "endpoint_category": string,
-        "validation_status": "validated"|"accepted"|"emerging",
-        "jurisdiction": "brazil"|"international"|"both",
         "oecd_tg_ref": "TG 439"|null,
-        "primary_lit_url": string|null,
-        "regulatory_url": string|null
+        "primary_lit_url": string|null
       },
+      "validation_contexts": [         -- all contexts for this method × matched study_domain (ADR-022)
+        {
+          "study_domain": "general"|"pharma"|"cosmetics"|"chemical_safety",
+          "jurisdiction": "brazil"|"eu"|"us"|"oecd",
+          "validation_status": "validated"|"accepted"|"emerging",
+          "regulatory_body": string|null,
+          "regulatory_ref": string|null,
+          "regulatory_url": string|null
+        }
+      ],
       "rank": 1,
       "score": 0.85,
       "matched_params": ["endpoint_category", "route"]

@@ -402,3 +402,124 @@ All compressions applied must be documented in `execution-log.md`.
 - Frontend S3: real `ResultCard` list from API (replaces mock assessment report); matching tabs; OECD ref on regulatory link; **Match** label on score.
 - `query_id` returns `null` until Phase 2 query persistence.
 - Supersedes ADR-014 deferral of multi-experiment UI to Phase 3 for S2/S3 tabs (side-by-side comparison remains Phase 3 / F17).
+
+---
+
+## ADR-020 — Campo `application_area` renomeado para `study_domain`
+
+**Decision:** O campo `application_area` em `RawExtraction`, na tabela `methods`, e em todos os contratos de API é renomeado para `study_domain`.
+
+**Context:** O nome `application_area` era ambíguo em dois sentidos: (a) podia ser confundido com "área anatômica de aplicação" (onde a substância é aplicada no organismo), conflitando com o campo `route`; (b) podia ser interpretado como "área de aplicação do método" em vez de "domínio em que o estudo existe". A ambiguidade foi identificada durante revisão de vocabulário em M3+.
+
+Adicionalmente, o vocabulário original de 4 valores (`pharma`, `cosmetics`, `chemical_safety`, `general`) não cobria domínios não-regulatórios relevantes em CEUAs brasileiras — especificamente neurociência comportamental (modelos de ansiedade, dor, cognição) e protocolos educacionais (treinamento cirúrgico). O campo `application_area` com o nome antigo implicava que um framework regulatório sempre existia, o que é falso para esses casos.
+
+**Rationale do novo nome:** `study_domain` responde à pergunta "em qual domínio de aplicação este estudo existe?" sem implicar que um contexto regulatório necessariamente existe. É inequívoco tanto para pesquisadores quanto para o LLM.
+
+**Vocabulário MVP (Phase 1–2):** `pharma` · `cosmetics` · `chemical_safety` · `general` — inalterado.
+
+**Vocabulário Phase 3 (candidatos — pendente validação Karynn):** `behavioral` · `education` · `basic_research`. Não adicionar ao vocabulário ativo até que (a) Karynn confirme que protocolos do piloto os requerem e (b) existam métodos correspondentes no banco. Adicionar valores sem cobertura gera expectativa falsa no S2.
+
+**Alternatives considered:**
+- `regulatory_context` — rejeitado: implica que um framework regulatório sempre existe; não cobre modelos comportamentais ou educacionais.
+- `application_context` — rejeitado: "contexto de aplicação" ainda pode ser lido como "como o método é aplicado", apenas parcialmente mais claro que o original.
+- `experimental_context` — rejeitado: mais amplo que o campo realmente é; não comunica que os valores MVP são domínios de aplicação setorial.
+
+**Reversibility:** Moderada — afeta contrato de API, schema de banco, e prompt.
+
+**Consequences:**
+- `parameter_model.md`: campo renomeado em §2 (tabela), §3.3 (seção de vocabulário — expandida com candidatos Phase 3), §4 (dataclass `RawExtraction`), §5 (embedding template), §7 (exemplo protótipo), §9 (prompt), §11.1–11.3 (exemplos reais).
+- `spec.md`: renomeado em §2.2 F02/F03, §2.3 S2, §2.6 schema `methods`, §2.6 retrieval approach, §2.10 W1, §2.11 `POST /analyze` response e `POST /search` request body.
+- `db/migrations/001_initial.sql`: `application_area TEXT` → `study_domain TEXT`. Migration necessária antes de ativar métodos (`active = TRUE`); sem dado persistido a converter até Phase 1 entrar em produção.
+- `app/models/protocol.py`: campo renomeado em `RawExtraction`.
+- `app/adapters/llm.py`: prompt atualizado.
+- `app/api/routes/search.py`: `params.application_area` → `params.study_domain` no `SearchRequest`.
+- `embed_methods.py`: coluna `application_area` → `study_domain` na query de leitura.
+- Frontend S2: label PT "Área de aplicação" → "Domínio do estudo" / EN "Study domain".
+
+---
+
+## ADR-021 — `category_3r` de TEXT para JSONB (múltiplos Rs por método)
+
+**Decision:** `category_3r TEXT NOT NULL` substituído por `category_3r JSONB NOT NULL` — array de strings, mesmo padrão de `routes_applicable`.
+
+**Context:** Um método pode satisfazer múltiplos Rs simultaneamente: TG 420/423/425 reduzem o número de animais (reduction) E refinam o procedimento eliminando a letalidade como endpoint obrigatório (refinement). LLNA:DA e LLNA:BrdU eliminam radioatividade em relação ao TG 429 (refinement) e substituem os testes em cobaia (replacement). O campo TEXT forçava uma escolha arbitrária que perdia informação auditável e afetava o filtro do S3.
+
+**Formato:** `'["replacement"]'` | `'["reduction","refinement"]'` | `'["replacement","refinement"]'` etc.
+
+**Filtro no RetrievalService:** `WHERE category_3r @> '["replacement"]'::jsonb` (PostgreSQL JSONB contains). Semântica OR — retorna métodos que têm *qualquer* R selecionado.
+
+**Classificações ambíguas — pendentes de confirmação Karynn:**
+
+| Método | Proposta | Questão |
+|---|---|---|
+| TG 429 LLNA | `["replacement"]` ou `["reduction","refinement"]` | Substitui cobaia (replacement) mas ainda usa camundongo — depende do referencial |
+| TG 442A/B | `["refinement"]` ou `["replacement","refinement"]` | Mesmo dilema do LLNA + eliminação de radioatividade |
+| TG 420/423/425 | `["reduction","refinement"]` | Reduz animais E refina — parece claro |
+| NICEATM cytotox | `["replacement","reduction"]` | Substitui dose-ranging in vivo E reduz animais no estudo principal |
+
+**Reversibility:** Moderada — schema change + frontend.
+
+**Consequences:**
+- `001_initial.sql`: tipo da coluna + INSERTs como arrays JSON.
+- `app/repositories/methods.py`: query de filtro via `@>` operator.
+- Frontend S3 `ResultCard`: iterar array para múltiplos badges 3R.
+- `karynn_review_checklist.md`: campo `category_3r` adicionado como item de revisão para os casos ambíguos.
+- `spec.md` §2.6 schema `Method` + §2.3 S3 description.
+
+---
+
+## ADR-022 — `method_validation_contexts`: validação por método × domínio × jurisdição; jurisdições específicas
+
+**Decision:** (a) `validation_status`, `jurisdiction`, `jurisdiction_notes`, `regulatory_url` removidos da tabela `methods` e migrados para nova tabela `method_validation_contexts`. (b) Vocabulário de jurisdição substituído: `'brazil' | 'international' | 'both'` → `'brazil' | 'eu' | 'us' | 'oecd'`.
+
+**Context:** `jurisdiction = 'both'` e `validation_status = 'validated'` eram propriedades do método, quando na realidade são propriedades da combinação método × domínio de aplicação × framework regulatório. BCOP (TG 437) é `validated` para cosméticos na UE (Reg 1223/2009), `accepted` para químicos sob REACH (ECHA), e sem status formal ANVISA para medicamentos. Um único par (validation_status, jurisdiction) comunicava algo que não era verdadeiro para todos os contextos. `international` colapsava EU, US, OECD e outros frameworks sem distinção — um pesquisador precisando de evidência regulatória específica para submissão ANVISA vs. registro CE obtinha a mesma resposta.
+
+**Schema:**
+```sql
+CREATE TABLE method_validation_contexts (
+    id                SERIAL PRIMARY KEY,
+    method_id         INTEGER NOT NULL REFERENCES methods(id) ON DELETE CASCADE,
+    study_domain      TEXT    NOT NULL,  -- 'general' | 'pharma' | 'cosmetics' | 'chemical_safety'
+    jurisdiction      TEXT    NOT NULL,  -- 'brazil' | 'eu' | 'us' | 'oecd'
+    validation_status TEXT    NOT NULL,  -- 'validated' | 'accepted' | 'emerging'
+    regulatory_body   TEXT,             -- 'CONCEA' | 'ANVISA' | 'ECHA' | 'EMA' | 'EPA' | 'FDA' | 'ICCVAM' | 'OECD'
+    regulatory_ref    TEXT,             -- e.g. 'RN 18/2014 Art. 2' | 'TG 439' | 'Reg 1223/2009'
+    regulatory_url    TEXT,
+    notes             TEXT,
+    UNIQUE (method_id, study_domain, jurisdiction)
+);
+```
+
+**Jurisdiction vocabulary:**
+- `brazil` — reconhecimento CONCEA / ANVISA / MAPA
+- `eu` — ECHA (REACH), EMA (pharma), EU Cosmetics Regulation 1223/2009, EFSA
+- `us` — FDA, EPA, ICCVAM/NICEATM
+- `oecd` — adotado como OECD Test Guideline; implica aceitação pelos 38 países-membros, sujeita a adoção nacional individual
+
+**Seed strategy MVP:** semear `brazil` (RN 18/2014) + `oecd` (TG number) para métodos confirmados; `us` para NICEATM. Deixar `eu` como [VERIFY] no checklist — requer Karynn verificar contra EU Cosmetics Reg 1223/2009 e REACH Annex.
+
+**RetrievalService query (filtro de jurisdição):**
+```sql
+SELECT DISTINCT m.*
+FROM methods m
+WHERE EXISTS (
+    SELECT 1 FROM method_validation_contexts mvc
+    WHERE mvc.method_id = m.id
+      AND (mvc.study_domain = :study_domain OR mvc.study_domain = 'general')
+      AND mvc.jurisdiction = :jurisdiction   -- filtro opcional
+)
+```
+
+**POST /search response:** inclui array `validation_contexts` com todas as entradas do método para o domínio matchado.
+
+**S3 ResultCard:** exibe badges de jurisdição para todos os contextos retornados (ex: "OECD · Brasil"); `validation_status` exibido do contexto mais relevante (brazil se disponível, senão oecd).
+
+**Reversibility:** Moderada — JOIN adicional no MethodRepository; frontend atualiza display de badges.
+
+**Consequences:**
+- `001_initial.sql`: nova tabela + seed de contextos; campos removidos de `methods`.
+- `spec.md` §2.6: entidade Method atualizada; nova entidade MethodValidationContext; POST /search filter e response.
+- `karynn_review_checklist.md`: seção de validação por método reestruturada como tabela de contextos.
+- `app/repositories/methods.py`: JOIN + GROUP BY para agregar contextos por método.
+- Frontend S3: múltiplos badges jurisdição/validação por card.
+- H5 impact: Karynn deve registrar tempo por entrada incluindo preenchimento de contextos — novo dado para estimativa de manutenção.

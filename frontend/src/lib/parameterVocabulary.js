@@ -20,7 +20,7 @@ export const ROUTES = [
   'in_vitro',
 ]
 
-export const APPLICATION_AREAS = [
+export const STUDY_DOMAINS = [
   'pharma',
   'cosmetics',
   'chemical_safety',

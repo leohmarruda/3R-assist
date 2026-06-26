@@ -72,7 +72,7 @@ def _assert_evidence_fields(
 ) -> None:
     field_map = {
         "route": raw.route_evidence,
-        "application_area": raw.application_area_evidence,
+        "study_domain": raw.study_domain_evidence,
         "procedure_text": raw.procedure_text_evidence,
         "species": raw.species_evidence,
         "animal_counts": raw.animal_counts_evidence,
@@ -131,10 +131,10 @@ def _assert_extraction_matches(
             f"route: got {raw.route!r}, expected null"
         )
 
-    if raw.application_area not in expected.application_area:
+    if raw.study_domain not in expected.study_domain:
         mismatches.append(
-            f"application_area: got {raw.application_area!r}, "
-            f"expected one of {sorted(expected.application_area)!r}"
+            f"study_domain: got {raw.study_domain!r}, "
+            f"expected one of {sorted(expected.study_domain)!r}"
         )
 
     if raw.species != expected.species:

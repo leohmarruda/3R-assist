@@ -30,7 +30,7 @@ Route = Literal[
     "in_vitro",
 ]
 
-ApplicationArea = Literal["pharma", "cosmetics", "chemical_safety", "general"]
+StudyDomain = Literal["pharma", "cosmetics", "chemical_safety", "general"]
 
 Species = Literal[
     "rat",
@@ -56,9 +56,9 @@ class RawExtraction(BaseModel):
     route: list[Route] | None = None
     route_evidence: str | None = None
     route_confidence: ConfidenceLevel | None = None
-    application_area: ApplicationArea = "general"
-    application_area_evidence: str | None = None
-    application_area_confidence: ConfidenceLevel | None = None
+    study_domain: StudyDomain = "general"
+    study_domain_evidence: str | None = None
+    study_domain_confidence: ConfidenceLevel | None = None
     procedure_text: str | None = None
     procedure_text_evidence: str | None = None
     procedure_text_confidence: ConfidenceLevel | None = None
@@ -84,7 +84,7 @@ class ProtocolParameters(BaseModel):
 
     endpoint_category: EndpointCategory | None = None
     route: list[Route] | None = None
-    application_area: ApplicationArea = "general"
+    study_domain: StudyDomain = "general"
     procedure_text: str | None = None
     species: Species | None = None
     n_animals: int | None = None
@@ -108,7 +108,7 @@ def to_protocol_parameters(result: ExtractionResult) -> ProtocolParameters:
     return ProtocolParameters(
         endpoint_category=result.endpoint_category,
         route=result.raw.route,
-        application_area=result.raw.application_area,
+        study_domain=result.raw.study_domain,
         procedure_text=result.raw.procedure_text,
         species=result.raw.species,
         n_animals=primary_animal_count(result.raw.animal_counts),
@@ -143,7 +143,7 @@ class AnalyzeResponse(BaseModel):
 
 
 ThreeRClass = Literal["replacement", "reduction", "refinement"]
-JurisdictionFilter = Literal["brazil", "international", "both"]
+JurisdictionFilter = Literal["brazil", "eu", "us", "oecd"]
 
 
 class SearchFilters(BaseModel):

@@ -49,7 +49,7 @@
     "backToParams": "Voltar aos parâmetros",
     "searchCta": "Buscar alternativas",
     "searching": "Buscando…",
-    "incompleteWarning": "A área de aplicação é obrigatória antes da busca.",
+    "incompleteWarning": "O domínio do estudo é obrigatório antes da busca.",
     "identificationSection": "Identificação do estudo",
     "protocolSourceLabel": "Protocolo original",
     "protocolHighlightLegend": "Destacado = evidência da extração",
@@ -87,7 +87,7 @@
       "studyType": "Tipo de estudo (extraído)",
       "endpointCategory": "Categoria de endpoint (banco)",
       "route": "Via de administração",
-      "applicationArea": "Área de aplicação",
+      "studyDomain": "Domínio do estudo",
       "procedureText": "Texto do procedimento",
       "species": "Espécie",
       "regulatory": "Contexto regulatório",
@@ -120,7 +120,7 @@
         "inhalation": "Inalação",
         "in_vitro": "In vitro"
       },
-      "applicationArea": {
+      "studyDomain": {
         "pharma": "Farmacêutica",
         "cosmetics": "Cosméticos",
         "chemical_safety": "Segurança química",
@@ -161,8 +161,9 @@
     },
     "jurisdiction": {
       "brazil": "Brasil",
-      "international": "Internacional",
-      "both": "Brasil / Internacional"
+      "eu": "UE",
+      "us": "EUA",
+      "oecd": "OECD"
     },
     "validationStatus": {
       "validated": "Validado",

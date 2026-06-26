@@ -1,6 +1,4 @@
 import { useTranslation } from 'react-i18next'
-import LangToggle from './LangToggle'
-import { currentLanguage, setLanguage } from '../lib/i18n'
 
 const MIN_LENGTH = 20
 const MAX_LENGTH = 10000
@@ -13,23 +11,15 @@ export default function ProtocolTextarea({
   id = 'protocol-text',
 }) {
   const { t } = useTranslation()
-  const lang = currentLanguage()
-
-  const handleLangChange = (nextLang) => {
-    void setLanguage(nextLang)
-  }
 
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-container-lowest p-card-gap">
-      <div className="mb-card-gap flex items-center justify-between gap-element-gap">
-        <label
-          htmlFor={id}
-          className="font-label-caps text-label-caps uppercase text-on-surface-variant"
-        >
-          {t('s1.pasteLabel')}
-        </label>
-        <LangToggle value={lang} onChange={handleLangChange} />
-      </div>
+      <label
+        htmlFor={id}
+        className="mb-card-gap block font-label-caps text-label-caps uppercase text-on-surface-variant"
+      >
+        {t('s1.pasteLabel')}
+      </label>
       <div className="relative">
         <textarea
           id={id}

@@ -4,16 +4,21 @@ import { Link, Navigate, useLocation } from 'react-router-dom'
 import ExperimentTabs, { experimentTabLabel } from '../components/ExperimentTabs'
 import ResultCard from '../components/ResultCard'
 import {
+  formatJurisdictionBadges,
   formatMatchedParams,
   formatOecdReference,
+  formatThreeRLabel,
   isLowConfidenceScore,
   methodDescription,
   methodDisplayName,
+  primaryThreeR,
+  primaryValidationContext,
+  regulatoryUrlFromContexts,
   scorePercent,
 } from '../lib/search'
 
 const THREE_R_FILTERS = ['all', 'replacement', 'reduction', 'refinement']
-const JURISDICTION_FILTERS = ['all', 'brazil', 'international', 'both']
+const JURISDICTION_FILTERS = ['all', 'brazil', 'eu', 'us', 'oecd']
 
 function ParamSummaryRow({ label, value }) {
   if (!value) return null
@@ -74,12 +79,13 @@ export default function ResultsPage() {
   const filteredResults = useMemo(() => {
     return recommendations.filter((item) => {
       const method = item.method
-      if (threeRFilter !== 'all' && method.category_3r !== threeRFilter) {
+      const contexts = item.validation_contexts ?? []
+      if (threeRFilter !== 'all' && !method.category_3r?.includes(threeRFilter)) {
         return false
       }
       if (
         jurisdictionFilter !== 'all' &&
-        method.jurisdiction !== jurisdictionFilter
+        !contexts.some((context) => context.jurisdiction === jurisdictionFilter)
       ) {
         return false
       }
@@ -160,10 +166,10 @@ export default function ResultsPage() {
             />
             <ParamSummaryRow label={t('s2.fields.route')} value={routeLabel} />
             <ParamSummaryRow
-              label={t('s2.fields.applicationArea')}
+              label={t('s2.fields.studyDomain')}
               value={
-                params.application_area
-                  ? t(`s2.enums.applicationArea.${params.application_area}`)
+                params.study_domain
+                  ? t(`s2.enums.studyDomain.${params.study_domain}`)
                   : null
               }
             />
@@ -251,26 +257,29 @@ export default function ResultsPage() {
           <div className="grid gap-card-gap">
             {filteredResults.map((item) => {
               const method = item.method
+              const contexts = item.validation_contexts ?? []
+              const primaryContext = primaryValidationContext(contexts)
               const percent = scorePercent(item.score)
+              const threeR = primaryThreeR(method.category_3r)
               return (
                 <ResultCard
                   key={method.slug}
-                  type={method.category_3r}
-                  badgeLabel={t(`s3.threeR.${method.category_3r}`)}
+                  type={threeR}
+                  badgeLabel={formatThreeRLabel(method.category_3r, t)}
                   title={methodDisplayName(method, lang)}
                   score={percent}
-                  jurisdiction={t(`s3.jurisdiction.${method.jurisdiction}`)}
+                  jurisdiction={formatJurisdictionBadges(contexts, t)}
                   dimmed={isLowConfidenceScore(item.score)}
-                  validationStatus={t(
-                    `s3.validationStatus.${method.validation_status}`,
-                  )}
+                  validationStatus={
+                    primaryContext
+                      ? t(`s3.validationStatus.${primaryContext.validation_status}`)
+                      : null
+                  }
                   oecdTgRef={formatOecdReference(method.oecd_tg_ref)}
                   matchedParams={formatMatchedParams(item.matched_params, t)}
                   matchedParamsLabel={t('s3.matchedParams')}
                   description={methodDescription(method, lang)}
-                  primaryUrl={method.primary_lit_url}
-                  regulatoryUrl={method.regulatory_url}
-                  sourcesLabel={t('s3.sourceLink')}
+                  regulatoryUrl={regulatoryUrlFromContexts(contexts)}
                   regulatoryLinkLabel={t('s3.regulatoryLink')}
                   matchLabel={t('s3.matchLabel')}
                 />
