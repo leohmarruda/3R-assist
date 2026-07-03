@@ -11,3 +11,38 @@ export function fetchAdminTable(tableName, { limit = 100, offset = 0 } = {}) {
   })
   return apiFetch(`/admin/tables/${encodeURIComponent(tableName)}?${params}`)
 }
+
+export function insertAdminRow(tableName, values) {
+  return apiFetch(`/admin/tables/${encodeURIComponent(tableName)}`, {
+    method: 'POST',
+    body: JSON.stringify({ values }),
+  })
+}
+
+export function updateAdminCell(tableName, { primaryKey, column, value }) {
+  return apiFetch(`/admin/tables/${encodeURIComponent(tableName)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
+      primary_key: primaryKey,
+      column,
+      value,
+    }),
+  })
+}
+
+export function deleteAdminRows(tableName, rows) {
+  return apiFetch(`/admin/tables/${encodeURIComponent(tableName)}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ rows }),
+  })
+}
+
+export function updateAdminColumnComment(tableName, column, comment) {
+  return apiFetch(
+    `/admin/tables/${encodeURIComponent(tableName)}/columns/${encodeURIComponent(column)}/comment`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ comment }),
+    },
+  )
+}

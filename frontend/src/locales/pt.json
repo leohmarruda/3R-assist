@@ -16,9 +16,9 @@
     "placeholder": "Sobre o 3R Assist, metodologia e documentação — em breve."
   },
   "admin": {
-    "title": "Administração do banco",
-    "subtitle": "Navegue pelas tabelas públicas do PostgreSQL.",
-    "tabsLabel": "Tabelas do banco",
+    "title": "Admin",
+    "tabsLabel": "Seções de administração",
+    "tablesLabel": "Tabelas do banco",
     "loading": "Carregando…",
     "loadError": "Não foi possível carregar os dados de administração.",
     "noTables": "Nenhuma tabela encontrada.",
@@ -26,7 +26,45 @@
     "rowCount": "Registros {{from}}–{{to}} de {{total}}",
     "prevPage": "Anterior",
     "nextPage": "Próxima",
-    "pageOf": "Página {{current}} de {{total}}"
+    "pageOf": "Página {{current}} de {{total}}",
+    "editHint": "Clique duas vezes para editar",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "saving": "Salvando…",
+    "saveError": "Não foi possível salvar as alterações.",
+    "invalidValue": "Valor inválido.",
+    "delete": "Excluir",
+    "deleteSelected": "Excluir ({{count}})",
+    "deleteConfirm": "Excluir {{count}} registro(s) selecionado(s)?",
+    "deleteConfirmAction": "Confirmar",
+    "deleting": "Excluindo…",
+    "deleteError": "Não foi possível excluir os registros.",
+    "selectAll": "Selecionar todos os registros desta página",
+    "selectRow": "Selecionar registro",
+    "columnComment": "Comentário da coluna",
+    "columnCommentHint": "Comentário de {{column}}",
+    "noComment": "Nenhum comentário ainda. Clique duas vezes para adicionar.",
+    "noCommentHint": "Sem comentário",
+    "close": "Fechar",
+    "addRow": "Adicionar registro",
+    "ok": "OK",
+    "addRowError": "Não foi possível adicionar o registro.",
+
+
+    "database": {
+      "label": "Banco de dados",
+      "subtitle": "Navegue e edite as tabelas públicas do PostgreSQL. Clique duas vezes em uma célula para editar."
+    },
+    "docs": {
+      "label": "Docs",
+      "subtitle": "Documentação interna e materiais de revisão.",
+      "placeholder": "Docs — em breve."
+    },
+    "settings": {
+      "label": "Configurações",
+      "subtitle": "Configuração de administração.",
+      "placeholder": "Configurações — em breve."
+    }
   },
   "s1": {
     "title": "Descreva seu protocolo experimental",
@@ -35,6 +73,7 @@
     "placeholder": "Utilizamos camundongos Wistar para avaliar a toxicidade aguda por via oral…",
     "submit": "Analisar protocolo",
     "submitting": "Analisando…",
+    "submittingSeconds": "Analisando… {{seconds}}s",
     "mock": "Demonstração",
     "searchLink": "Já sabe o que procura?",
     "searchLinkAction": "Busca direta",
@@ -68,7 +107,7 @@
       "no": "Não"
     },
     "hints": {
-      "route": "oral, intraperitoneal",
+      "route": "Selecione todas as vias aplicáveis.",
       "procedureText": "Descrição breve em inglês usada no matching semântico (máx. ~30 palavras)."
     },
     "fieldConfidence": {
@@ -118,7 +157,8 @@
         "dermal": "Dérmica",
         "ocular": "Ocular",
         "inhalation": "Inalação",
-        "in_vitro": "In vitro"
+        "in_vitro": "In vitro",
+        "other": "Outra"
       },
       "studyDomain": {
         "pharma": "Farmacêutica",

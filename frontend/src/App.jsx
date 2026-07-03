@@ -15,6 +15,7 @@ export default function App() {
       <TopNav />
       <Routes>
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/:section" element={<AdminPage />} />
         <Route path="/" element={<AnalyzePage onSubmit={analyzeProtocol} />} />
         <Route path="/parameters" element={<ParametersPage />} />
         <Route path="/resultados" element={<ResultsPage />} />

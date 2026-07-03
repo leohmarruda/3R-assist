@@ -18,6 +18,7 @@ export const ROUTES = [
   'ocular',
   'inhalation',
   'in_vitro',
+  'other',
 ]
 
 export const STUDY_DOMAINS = [

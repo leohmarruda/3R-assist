@@ -226,6 +226,14 @@ INSERT INTO routes (code, name_en, name_pt, description_en, description_pt, sort
     'Cell suspension, well plate, monolayer culture.',
     'Célula em suspensão, placa de poços, cultura em monocamada.',
     70
+),
+(
+    'other',
+    'Other',
+    'Outra',
+    'Any chemical administration route not covered by the controlled list.',
+    'Qualquer via de administração química não coberta pela lista controlada.',
+    80
 );
 
 -- ---------------------------------------------------------------------------
@@ -302,7 +310,7 @@ ALTER TABLE methods
 -- VERIFICATION QUERIES
 -- ---------------------------------------------------------------------------
 -- SELECT COUNT(*) FROM endpoints;           -- expect 9
--- SELECT COUNT(*) FROM routes;            -- expect 7
+-- SELECT COUNT(*) FROM routes;            -- expect 8
 -- SELECT COUNT(*) FROM study_domains;       -- expect 4
 -- SELECT COUNT(*) FROM route_endpoints;     -- expect 11
 -- SELECT code, name_en FROM endpoints ORDER BY sort_order;

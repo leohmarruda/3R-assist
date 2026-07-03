@@ -81,13 +81,17 @@ const EMPTY_ANIMAL_COUNTS = {
   per_group: '',
 }
 
-function parseRoutes(value) {
-  if (!value?.trim()) return null
-  const routes = value
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)
-  return routes.length ? routes : null
+function normalizeRoutes(route) {
+  if (Array.isArray(route)) {
+    return route.filter((item) => ROUTES.includes(item))
+  }
+  if (typeof route === 'string' && route.trim()) {
+    return route
+      .split(',')
+      .map((part) => part.trim())
+      .filter((item) => ROUTES.includes(item))
+  }
+  return []
 }
 
 function parseCount(value) {
@@ -142,16 +146,10 @@ export function normalizeParamsFromExperiment(experiment) {
   })
 }
 
-function formatRouteForForm(route) {
-  if (Array.isArray(route)) return route.join(', ')
-  if (typeof route === 'string' && route.trim()) return route.trim()
-  return ''
-}
-
 export function normalizeParams(params) {
   return {
     endpoint_category: params?.endpoint_category ?? '',
-    route: formatRouteForForm(params?.route),
+    route: normalizeRoutes(params?.route),
     study_domain: params?.study_domain ?? 'general',
     procedure_text: params?.procedure_text ?? '',
     species: params?.species ?? '',
@@ -170,10 +168,11 @@ export function normalizeParams(params) {
 
 export function serializeParams(form) {
   const animal_counts = serializeAnimalCounts(form.animal_counts)
+  const routes = normalizeRoutes(form.route)
 
   return {
     endpoint_category: form.endpoint_category || null,
-    route: parseRoutes(form.route),
+    route: routes.length ? routes : null,
     study_domain: form.study_domain || 'general',
     procedure_text: form.procedure_text?.trim() || null,
     species: form.species || null,

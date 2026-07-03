@@ -18,6 +18,7 @@ export default function AnalyzePage({ onSubmit }) {
 
   const [protocolText, setProtocolText] = useState(restored?.protocolText ?? '')
   const [submitting, setSubmitting] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -25,6 +26,21 @@ export default function AnalyzePage({ onSubmit }) {
       void setLanguage(restored.lang)
     }
   }, [restored?.lang])
+
+  useEffect(() => {
+    if (!submitting) {
+      setElapsedSeconds(0)
+      return undefined
+    }
+
+    setElapsedSeconds(0)
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000))
+    }, 250)
+
+    return () => window.clearInterval(timer)
+  }, [submitting])
 
   const trimmedLength = protocolText.trim().length
   const canSubmit = trimmedLength >= MIN_LENGTH && !submitting
@@ -107,7 +123,9 @@ export default function AnalyzePage({ onSubmit }) {
             {t('s1.mock')}
           </Button>
           <Button type="submit" disabled={!canSubmit}>
-            {submitting ? t('s1.submitting') : t('s1.submit')}
+            {submitting
+              ? t('s1.submittingSeconds', { seconds: elapsedSeconds })
+              : t('s1.submit')}
             {!submitting && <span aria-hidden="true">→</span>}
           </Button>
         </div>

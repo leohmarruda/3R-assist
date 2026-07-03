@@ -53,12 +53,18 @@ def _matches_endpoint(method: Method, params: ProtocolParameters) -> bool:
     return method.endpoint_category == params.endpoint_category
 
 
+def _filterable_routes(params: ProtocolParameters) -> list[str]:
+    """Routes that participate in soft filtering (`other` is display-only)."""
+    return [route for route in (params.route or []) if route != "other"]
+
+
 def _matches_route(method: Method, params: ProtocolParameters) -> bool:
-    if not params.route:
+    routes = _filterable_routes(params)
+    if not routes:
         return True
     if not method.routes_applicable:
         return True
-    return any(route in method.routes_applicable for route in params.route)
+    return any(route in method.routes_applicable for route in routes)
 
 
 def _apply_filters(
@@ -82,9 +88,10 @@ def _matched_params(method: Method, params: ProtocolParameters) -> list[str]:
     matched: list[str] = []
     if params.endpoint_category and method.endpoint_category == params.endpoint_category:
         matched.append("endpoint_category")
-    if params.route and (
+    routes = _filterable_routes(params)
+    if routes and (
         not method.routes_applicable
-        or any(route in method.routes_applicable for route in params.route)
+        or any(route in method.routes_applicable for route in routes)
     ):
         matched.append("route")
     if params.study_domain and method.study_domain == params.study_domain:

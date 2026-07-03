@@ -28,6 +28,7 @@ Route = Literal[
     "ocular",
     "inhalation",
     "in_vitro",
+    "other",
 ]
 
 StudyDomain = Literal["pharma", "cosmetics", "chemical_safety", "general"]

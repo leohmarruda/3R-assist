@@ -16,9 +16,9 @@
     "placeholder": "About 3R Assist, methodology, and documentation — coming soon."
   },
   "admin": {
-    "title": "Database admin",
-    "subtitle": "Browse public PostgreSQL tables.",
-    "tabsLabel": "Database tables",
+    "title": "Admin",
+    "tabsLabel": "Admin sections",
+    "tablesLabel": "Database tables",
     "loading": "Loading…",
     "loadError": "Could not load admin data.",
     "noTables": "No tables found.",
@@ -26,7 +26,45 @@
     "rowCount": "Rows {{from}}–{{to}} of {{total}}",
     "prevPage": "Previous",
     "nextPage": "Next",
-    "pageOf": "Page {{current}} of {{total}}"
+    "pageOf": "Page {{current}} of {{total}}",
+    "editHint": "Double-click to edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "saveError": "Could not save changes.",
+    "invalidValue": "Invalid value.",
+    "delete": "Delete",
+    "deleteSelected": "Delete ({{count}})",
+    "deleteConfirm": "Delete {{count}} selected row(s)?",
+    "deleteConfirmAction": "Confirm",
+    "deleting": "Deleting…",
+    "deleteError": "Could not delete rows.",
+    "selectAll": "Select all rows on this page",
+    "selectRow": "Select row",
+    "columnComment": "Column comment",
+    "columnCommentHint": "Comment for {{column}}",
+    "noComment": "No comment yet. Double-click to add one.",
+    "noCommentHint": "No comment",
+    "close": "Close",
+    "addRow": "Add row",
+    "ok": "OK",
+    "addRowError": "Could not add row.",
+
+
+    "database": {
+      "label": "Database",
+      "subtitle": "Browse and edit public PostgreSQL tables. Double-click a cell to edit."
+    },
+    "docs": {
+      "label": "Docs",
+      "subtitle": "Internal documentation and review materials.",
+      "placeholder": "Docs — coming soon."
+    },
+    "settings": {
+      "label": "Settings",
+      "subtitle": "Admin configuration.",
+      "placeholder": "Settings — coming soon."
+    }
   },
   "s1": {
     "title": "Describe your experimental protocol",
@@ -35,6 +73,7 @@
     "placeholder": "We used Wistar rats to assess acute oral toxicity…",
     "submit": "Analyze protocol",
     "submitting": "Analyzing…",
+    "submittingSeconds": "Analyzing… {{seconds}}s",
     "mock": "Demo",
     "searchLink": "Already know what you're looking for?",
     "searchLinkAction": "Direct search",
@@ -68,7 +107,7 @@
       "no": "No"
     },
     "hints": {
-      "route": "oral, intraperitoneal",
+      "route": "Select all applicable routes.",
       "procedureText": "Brief English description used for semantic matching (max ~30 words)."
     },
     "fieldConfidence": {
@@ -118,7 +157,8 @@
         "dermal": "Dermal",
         "ocular": "Ocular",
         "inhalation": "Inhalation",
-        "in_vitro": "In vitro"
+        "in_vitro": "In vitro",
+        "other": "Other"
       },
       "studyDomain": {
         "pharma": "Pharmaceutical",

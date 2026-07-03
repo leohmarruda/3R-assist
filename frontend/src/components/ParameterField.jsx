@@ -77,15 +77,32 @@ export default function ParameterField({
 }) {
   const { t } = useTranslation()
   const displayValue = value ?? ''
+  const isMultiSelect = type === 'routes' || type === 'multiselect'
+  const labelId = `${id}-label`
+
+  function toggleOption(option) {
+    const selected = Array.isArray(value) ? value : []
+    if (selected.includes(option)) {
+      onChange(selected.filter((item) => item !== option))
+      return
+    }
+    onChange([...selected, option])
+  }
 
   function renderInput() {
     if (readOnly) {
+      const readOnlyValue = isMultiSelect
+        ? (Array.isArray(value) ? value : [])
+            .map((option) => t(`s2.enums.${enumPrefix}.${option}`))
+            .join(', ')
+        : displayValue
+
       return (
         <p
           id={id}
           className="rounded-lg border border-border-subtle bg-surface-container-low px-container-padding py-2 font-body-base text-body-base text-on-surface"
         >
-          {displayValue || t('s2.emptyOption')}
+          {readOnlyValue || t('s2.emptyOption')}
         </p>
       )
     }
@@ -148,16 +165,40 @@ export default function ParameterField({
       )
     }
 
-    if (type === 'routes') {
+    if (isMultiSelect) {
+      const selected = Array.isArray(value) ? value : []
       return (
-        <input
+        <div
           id={id}
-          type="text"
-          value={displayValue}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={displayValue ? undefined : t('s2.hints.route')}
-          className={`${inputClass(incomplete)} font-monospace-data text-monospace-data`}
-        />
+          role="group"
+          aria-labelledby={labelId}
+          className={`flex flex-wrap gap-x-4 gap-y-2 rounded-lg border px-container-padding py-2 ${
+            incomplete
+              ? 'border-reduction-border bg-reduction-bg/30'
+              : 'border-border-emphasis bg-surface-container-lowest'
+          }`}
+        >
+          {options.map((option) => {
+            const checked = selected.includes(option)
+            const optionId = `${id}-${option}`
+            return (
+              <label
+                key={option}
+                htmlFor={optionId}
+                className="inline-flex cursor-pointer items-center gap-2 font-body-base text-body-base text-on-surface"
+              >
+                <input
+                  id={optionId}
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleOption(option)}
+                  className="h-4 w-4 rounded border-border-emphasis text-primary accent-primary"
+                />
+                {t(`s2.enums.${enumPrefix}.${option}`)}
+              </label>
+            )
+          })}
+        </div>
       )
     }
 
@@ -175,13 +216,14 @@ export default function ParameterField({
   return (
     <div className="space-y-1">
       <label
-        htmlFor={id}
+        id={isMultiSelect ? labelId : undefined}
+        htmlFor={isMultiSelect ? undefined : id}
         className="font-small-label text-small-label uppercase text-on-surface-variant opacity-65"
       >
         {t(labelKey)}
       </label>
       {renderInput()}
-      {hintKey && type !== 'routes' && !readOnly && (
+      {hintKey && !readOnly && (
         <p className="font-metadata text-metadata text-text-tertiary">
           {t(hintKey)}
         </p>

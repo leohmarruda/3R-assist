@@ -49,6 +49,7 @@ describes substance-to-tissue contact, not the culture setup.
   intravenous       ← i.v., endovenous
   inhalation        ← aerosol, nose-only chamber, inhalation chamber,
                        whole-body exposure
+  other             ← any chemical administration route not listed above
   null              ← UV irradiation, radiation, physical exposure
                        (radiation is not a chemical administration route)
 
