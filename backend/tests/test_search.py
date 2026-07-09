@@ -24,6 +24,11 @@ def _context(
     )
 
 
+def _rationales_from_classes(category_3r: list[str] | None) -> dict[str, str]:
+    classes = category_3r or ["replacement"]
+    return {f"{r}_rationale": f"Test rationale for {r}" for r in classes}
+
+
 def _method(
     slug: str,
     endpoint: str,
@@ -41,12 +46,12 @@ def _method(
         description_en="desc",
         description_pt="desc",
         text_for_embedding="acute oral LD50",
-        category_3r=category_3r or ["replacement"],
         endpoint_category=endpoint,
         study_domain="general",
         source_db="NICEATM",
         routes_applicable=routes,
         active=True,
+        **_rationales_from_classes(category_3r),
     )
     return method, contexts or [_context("oecd"), _context("brazil")]
 

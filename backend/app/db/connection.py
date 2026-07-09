@@ -143,6 +143,9 @@ async def create_pool() -> Pool:
                 min_size=1,
                 max_size=10,
                 init=_init_connection,
+                # Avoid InvalidCachedStatementError after migrations alter tables
+                # while the API process is still running (admin uses SELECT *).
+                statement_cache_size=0,
             )
         return _pool
 

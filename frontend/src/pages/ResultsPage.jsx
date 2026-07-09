@@ -7,10 +7,11 @@ import {
   formatJurisdictionBadges,
   formatMatchedParams,
   formatOecdReference,
-  formatThreeRLabel,
   isLowConfidenceScore,
   methodDescription,
   methodDisplayName,
+  methodThreeRBadges,
+  methodThreeRClasses,
   primaryThreeR,
   primaryValidationContext,
   regulatoryUrlFromContexts,
@@ -80,7 +81,10 @@ export default function ResultsPage() {
     return recommendations.filter((item) => {
       const method = item.method
       const contexts = item.validation_contexts ?? []
-      if (threeRFilter !== 'all' && !method.category_3r?.includes(threeRFilter)) {
+      if (
+        threeRFilter !== 'all' &&
+        !methodThreeRClasses(method).includes(threeRFilter)
+      ) {
         return false
       }
       if (
@@ -260,12 +264,12 @@ export default function ResultsPage() {
               const contexts = item.validation_contexts ?? []
               const primaryContext = primaryValidationContext(contexts)
               const percent = scorePercent(item.score)
-              const threeR = primaryThreeR(method.category_3r)
+              const threeR = primaryThreeR(method)
               return (
                 <ResultCard
                   key={method.slug}
                   type={threeR}
-                  badgeLabel={formatThreeRLabel(method.category_3r, t)}
+                  badges={methodThreeRBadges(method, t)}
                   title={methodDisplayName(method, lang)}
                   score={percent}
                   jurisdiction={formatJurisdictionBadges(contexts, t)}

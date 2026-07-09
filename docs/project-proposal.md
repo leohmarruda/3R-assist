@@ -256,7 +256,7 @@ These became explicit constraints in `spec.md` (Module 2):
 - **Data quality.** Source data is inconsistent in format and completeness; the ingestion pipeline requires a normalization layer (addressed by manual curation in the MVP, automation deferred to Phase 4).  
 - **Language.** Protocols may be submitted in Portuguese or English. The architecture supports both from day one — deferring this would be expensive to retrofit.  
 - **Database updates.** New methods are published continuously. The architecture must support re-ingestion without rebuilding from scratch (handled by manual update + re-deploy in the MVP; incremental pipeline in later phases).
-- **Database infrastructure.** PostgreSQL (Neon/Vercel Postgres free tier) is used for production; replaces the original SQLite/Turso plan (see ADR-013). Single `DATABASE_URL` env var; no fixed cost at MVP scale.
+- **Database infrastructure.** **PostgreSQL only** for both development and production (Neon/Vercel Postgres free tier, or local PostgreSQL in dev). Not SQLite. Replaces the original SQLite/Turso plan (ADR-013 supersedes ADR-004). Single `DATABASE_URL` (`postgresql://`); driver `asyncpg`; no fixed cost at MVP scale.
 
 ### 13.6 Simpler alternative (explicitly considered, kept as fallback)
 

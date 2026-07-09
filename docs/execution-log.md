@@ -53,12 +53,12 @@
 
 - `backend/` FastAPI app scaffolded per spec 2.8 (layered: routes → services → adapters/repositories).
 - Working endpoints: `GET /health`, `POST /analyze` (stub LLM when `ANTHROPIC_API_KEY` unset).
-- SQLite schema in `app/db/schema.sql`; auto-init on startup.
+- ~~SQLite schema in `app/db/schema.sql`; auto-init on startup.~~ Superseded — PostgreSQL only (see M3 Database / ADR-013).
 - Smoke test: `backend/scripts/smoke_test.py`. Unit tests: `backend/tests/`.
 
 ## M3 — Database (methods + application tables)
 
-**Infrastructure deviation:** SQLite/Turso replaced by PostgreSQL (Neon/Vercel Postgres). See ADR-013, supersedes ADR-004. Triggers: Vercel deployment context; single-driver simplicity; JSONB and pgvector path for Phase 3. Cost impact: zero — Neon free tier.
+**Infrastructure deviation (current):** **PostgreSQL only** — SQLite/Turso fully replaced (ADR-013 supersedes ADR-004). Dev and prod use PostgreSQL (Neon branch or local instance / Neon Vercel Postgres). Driver: `asyncpg`. Triggers: Vercel deployment context; single-driver simplicity; JSONB and pgvector path for Phase 3. Cost impact: zero — Neon free tier. Any earlier M3 notes about SQLite schema files are historical only.
 
 **Env var changes:** `TURSO_URL` and `TURSO_AUTH_TOKEN` removed. Single `DATABASE_URL` replaces both. `.env.example` updated.
 

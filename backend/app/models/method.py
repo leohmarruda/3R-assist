@@ -1,13 +1,15 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, computed_field
 
 ThreeRClass = Literal["replacement", "reduction", "refinement"]
 RegulatoryJurisdiction = Literal["brazil", "eu", "us", "oecd"]
 StudyDomain = Literal["pharma", "cosmetics", "chemical_safety", "general"]
 ValidationStatus = Literal["validated", "accepted", "emerging"]
 SourceDb = Literal["OECD_TG", "ECVAM_DBALM", "NICEATM", "FARMACOPEIA_BR", "TSAR"]
+
+_THREE_R_ORDER: tuple[ThreeRClass, ...] = ("replacement", "reduction", "refinement")
 
 
 class MethodValidationContext(BaseModel):
@@ -28,7 +30,9 @@ class Method(BaseModel):
     description_en: str
     description_pt: str
     text_for_embedding: str
-    category_3r: list[ThreeRClass] = Field(..., min_length=1)
+    replacement_rationale: str | None = None
+    reduction_rationale: str | None = None
+    refinement_rationale: str | None = None
     endpoint_category: str
     study_domain: StudyDomain
     oecd_tg_ref: str | None = None
@@ -40,15 +44,30 @@ class Method(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+    @staticmethod
+    def _nonempty(value: str | None) -> bool:
+        return value is not None and value.strip() != ""
+
+    def rationale_for(self, value: ThreeRClass) -> str | None:
+        field = f"{value}_rationale"
+        text = getattr(self, field)
+        return text if self._nonempty(text) else None
+
     def has_three_r(self, value: ThreeRClass) -> bool:
-        return value in self.category_3r
+        return self.rationale_for(value) is not None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def category_3r(self) -> list[ThreeRClass]:
+        """Derived from non-null/non-empty rationale columns (ADR-023)."""
+        return [r for r in _THREE_R_ORDER if self.has_three_r(r)]
 
     @property
     def primary_three_r(self) -> ThreeRClass:
-        for preferred in ("replacement", "reduction", "refinement"):
-            if preferred in self.category_3r:
+        for preferred in _THREE_R_ORDER:
+            if self.has_three_r(preferred):
                 return preferred
-        return self.category_3r[0]
+        return "replacement"
 
 
 class MethodKeyword(BaseModel):

@@ -49,6 +49,10 @@
     "addRow": "Adicionar registro",
     "ok": "OK",
     "addRowError": "Não foi possível adicionar o registro.",
+    "requiredFieldsMissing": "Campos obrigatórios em falta: {{fields}}",
+    "selectRequired": "Selecione…",
+    "selectOptional": "— Nenhum —",
+
 
 
     "database": {

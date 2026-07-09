@@ -80,7 +80,10 @@ da substância com o tecido, não o tipo de cultura.
 | `ocular` | ocular, conjuntival, instilação ocular, applied over cornea, applied to corneal surface, ex vivo corneal application, topical to cornea | ocular_irritation |
 | `inhalation` | inalação, respiratório, aerossol, nose-only chamber | (sem métodos no banco MVP) |
 | `in_vitro` | célula em suspensão em placa ou poço, cell suspension, well plate, monolayer culture | genotoxicity, phototoxicity |
+| `other` | qualquer via química não coberta pela lista controlada | (sem mapeamento em `route_endpoints` no MVP) |
 | `null` | irradiação UV, exposição física, radiation — not a chemical route | — |
+
+> Vocabulários de `endpoint_category`, `route` e `study_domain` vivem nas tabelas PostgreSQL `endpoints`, `routes` e `study_domains` (`003_vocabulary_tables.sql`). Compatibilidade rota↔endpoint: tabela `route_endpoints`. Ver `docs/tables.md`.
 
 **Disambiguação ex vivo vs. in_vitro:**
 

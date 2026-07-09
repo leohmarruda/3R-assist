@@ -76,7 +76,7 @@ async def get_table_data(
             status_code=503,
             code="DATABASE_UNAVAILABLE",
             message="Could not load table data.",
-            detail={"type": type(exc).__name__},
+            detail={"type": type(exc).__name__, "reason": str(exc)},
         )
     return AdminTableDataResponse(**payload)
 
@@ -116,7 +116,9 @@ async def insert_table_row(
         return error_response(
             status_code=503,
             code="DATABASE_UNAVAILABLE",
-            message="Could not insert table row.",
+            message=(
+                f"Could not insert table row: {type(exc).__name__}: {exc}"
+            ),
             detail={"type": type(exc).__name__, "reason": str(exc)},
         )
     return AdminRowInsertResponse(**payload)
@@ -165,7 +167,9 @@ async def update_table_cell(
         return error_response(
             status_code=503,
             code="DATABASE_UNAVAILABLE",
-            message="Could not update table data.",
+            message=(
+                f"Could not update table data: {type(exc).__name__}: {exc}"
+            ),
             detail={"type": type(exc).__name__, "reason": str(exc)},
         )
     return AdminCellUpdateResponse(**payload)
@@ -206,7 +210,9 @@ async def delete_table_rows(
         return error_response(
             status_code=503,
             code="DATABASE_UNAVAILABLE",
-            message="Could not delete table rows.",
+            message=(
+                f"Could not delete table rows: {type(exc).__name__}: {exc}"
+            ),
             detail={"type": type(exc).__name__, "reason": str(exc)},
         )
     return AdminRowsDeleteResponse(**payload)
@@ -249,7 +255,9 @@ async def update_column_comment(
         return error_response(
             status_code=503,
             code="DATABASE_UNAVAILABLE",
-            message="Could not update column comment.",
+            message=(
+                f"Could not update column comment: {type(exc).__name__}: {exc}"
+            ),
             detail={"type": type(exc).__name__, "reason": str(exc)},
         )
     return AdminColumnCommentUpdateResponse(**payload)

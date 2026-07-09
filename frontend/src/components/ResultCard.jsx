@@ -15,7 +15,7 @@ const threeRStyles = {
 
 export default function ResultCard({
   type = 'replacement',
-  badgeLabel,
+  badges,
   title,
   score,
   jurisdiction = 'Brasil / Intl.',
@@ -32,6 +32,8 @@ export default function ResultCard({
   matchLabel = 'Match',
 }) {
   const styles = threeRStyles[type] ?? threeRStyles.replacement
+  // undefined badges → legacy single-type fallback; [] → no 3R qualification yet
+  const displayBadges = badges ?? [{ type, label: type, rationale: null }]
 
   const regulatoryLinkText = oecdTgRef
     ? `${regulatoryLinkLabel} (${oecdTgRef})`
@@ -41,22 +43,41 @@ export default function ResultCard({
     <article
       className={`rounded-lg border border-border-subtle bg-surface-container-lowest p-container-padding transition-colors duration-ethos hover:border-border-emphasis ${dimmed ? 'opacity-65' : ''}`}
     >
-      <div className="mb-4 flex items-start justify-between gap-card-gap">
-        <span
-          className={`rounded border px-2 py-0.5 font-badge-button text-badge-button uppercase tracking-tight ${styles.badge}`}
-        >
-          {badgeLabel ?? type}
-        </span>
+      <div className="mb-2 flex items-start justify-between gap-card-gap">
+        <h3 className="font-card-title text-card-title text-primary">{title}</h3>
         <span className="shrink-0 text-right font-metadata text-metadata text-text-tertiary">
           {matchLabel}{' '}
           <span className="font-monospace-data text-monospace-data">{score}%</span>
         </span>
       </div>
-      <h3 className="mb-2 font-card-title text-card-title text-primary">{title}</h3>
       {description && (
         <p className="mb-3 font-body-base text-body-base text-on-secondary-container">
           {description}
         </p>
+      )}
+      {displayBadges.length > 0 && (
+        <ul className="mb-3 flex flex-col gap-2">
+          {displayBadges.map((badge) => {
+            const badgeStyles = threeRStyles[badge.type] ?? threeRStyles.replacement
+            return (
+              <li
+                key={badge.type}
+                className="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-card-gap"
+              >
+                <span
+                  className={`w-fit shrink-0 rounded border px-2 py-0.5 font-badge-button text-badge-button uppercase tracking-tight ${badgeStyles.badge}`}
+                >
+                  {badge.label ?? badge.type}
+                </span>
+                {badge.rationale ? (
+                  <p className="font-metadata text-metadata text-on-secondary-container">
+                    {badge.rationale}
+                  </p>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
       )}
       <div className="flex flex-wrap items-center gap-fine-gap">
         <span className="rounded border border-info-border bg-info-bg px-2 py-0.5 font-badge-button text-badge-button text-info-text">

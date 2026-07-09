@@ -29,7 +29,7 @@ def _method(
         description_en="desc",
         description_pt="desc",
         text_for_embedding=text_for_embedding,
-        category_3r=["reduction"],
+        reduction_rationale="Test reduction rationale",
         endpoint_category=endpoint,
         study_domain="general",
         source_db="NICEATM",

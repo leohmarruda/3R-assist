@@ -117,7 +117,7 @@ Key bottleneck under load: the Service layer (embedding generation + cosine simi
 | Frontend | React 18 + Vite | SPA; static deploy on Vercel; team familiarity |
 | LLM | Anthropic API (`claude-sonnet-4-20250514`) | Parameter extraction; cost per query is a fraction of a cent |
 | Embeddings | `sentence-transformers` (`all-MiniLM-L6-v2`) | Local; zero API cost; 384-dim vectors; sufficient for small corpus |
-| Database | PostgreSQL (Neon/Vercel Postgres) | Zero fixed cost; free tier covers MVP scale; JSONB for embeddings; pgvector path for Phase 3. See ADR-013 |
+| Database | **PostgreSQL only** (Neon/Vercel Postgres) | Not SQLite. Zero fixed cost; free tier covers MVP scale; JSONB for embeddings; pgvector path for Phase 3. See ADR-013 (supersedes ADR-004 SQLite/Turso) |
 | DB driver | `asyncpg` | Async PostgreSQL driver; consistent with FastAPI async model |
 | Auth | Custom magic link — `itsdangerous` tokens + Resend email | No auth service dependency; Resend free tier: 3,000 emails/month |
 | Export | `reportlab` (PDF) + Python `csv` stdlib | Lightweight; no external service |
@@ -127,7 +127,7 @@ Key bottleneck under load: the Service layer (embedding generation + cosine simi
 
 **ADR references:** ADR-002 (Python/FastAPI), ADR-003 (React/Vite), ADR-013 (PostgreSQL — supersedes ADR-004), ADR-005 (sentence-transformers).
 
-> **Database note:** Single `DATABASE_URL` env var (standard `postgresql://` connection string). Both dev and prod use PostgreSQL — dev connects to a Neon branch or local PostgreSQL instance. See ADR-013.
+> **Database note:** **PostgreSQL only** — SQLite and Turso are not used (ADR-013). Single `DATABASE_URL` env var (standard `postgresql://` or `postgres://` connection string). Both dev and prod use PostgreSQL: Neon branch or local PostgreSQL in development; Neon (Vercel Postgres) in production. `asyncpg` rejects `sqlite://` URLs at startup.
 
 ---
 
@@ -135,11 +135,13 @@ Key bottleneck under load: the Service layer (embedding generation + cosine simi
 
 > ⚠️ **H2 and H5 are Partially Addressed.** Karynn's source analysis and curation of 25 methods (RN 18/2014 + OECD) established feasibility. Formal structured checks (ECVAM DB-ALM export count, per-entry curation time) are still required to declare Tested. See `assumption-log.md`.
 
+**Database:** PostgreSQL (not SQLite). Schema uses PostgreSQL types (`SERIAL`, `JSONB`, `TIMESTAMPTZ`, `BOOLEAN`) and is applied via SQL migrations under `backend/app/db/migrations/`. Full column reference: `docs/tables.md`.
+
 **Pattern:** Repository for Methods domain. Active Record acceptable for User/Auth CRUD (no domain logic). See ADR-006.
 
 #### Domain entities
 
-**Method** *(the core of the product — source of truth: `db/migrations/001_initial.sql`)*
+**Method** *(the core of the product — source of truth: `001_initial.sql`)*
 ```
 id                  SERIAL PRIMARY KEY
 slug                TEXT NOT NULL UNIQUE          -- human-readable curation key
@@ -148,9 +150,11 @@ name_pt             TEXT NOT NULL
 description_en      TEXT NOT NULL
 description_pt      TEXT NOT NULL
 text_for_embedding  TEXT NOT NULL                 -- exact string used at embed time; English only
-category_3r         JSONB NOT NULL                -- e.g. '["replacement"]', '["reduction","refinement"]' (ADR-021)
-endpoint_category   TEXT NOT NULL                 -- see parameter_model.md §3.1 vocabulary
-study_domain        TEXT NOT NULL                 -- 'general' | 'pharma' | 'cosmetics' | 'chemical_safety' (ADR-020)
+replacement_rationale TEXT                       -- non-null/non-empty ⇒ qualifies as replacement; text is audit rationale (ADR-023)
+reduction_rationale   TEXT                       -- non-null/non-empty ⇒ qualifies as reduction
+refinement_rationale  TEXT                       -- non-null/non-empty ⇒ qualifies as refinement
+endpoint_category   TEXT NOT NULL                 -- FK → endpoints(code); see parameter_model.md §3.1
+study_domain        TEXT NOT NULL                 -- FK → study_domains(code); ADR-020
 oecd_tg_ref         TEXT                          -- e.g. 'TG 439', 'GD 129'; NULL for non-OECD methods
 ncit_id             TEXT                          -- NCI Thesaurus concept ID; NULL until Karynn maps
 source_db           TEXT NOT NULL                 -- 'OECD_TG' | 'ECVAM_DBALM' | 'NICEATM' | 'FARMACOPEIA_BR' | 'TSAR'
@@ -204,7 +208,34 @@ keyword     TEXT NOT NULL
 language    TEXT NOT NULL    -- 'en' | 'pt'
 ```
 
-**User** *(source of truth: `db/migrations/002_app_tables.sql`)*
+**Endpoint / Route / StudyDomain** *(controlled vocabularies — source of truth: `003_vocabulary_tables.sql`)*
+
+Shared shape for `endpoints`, `routes`, and `study_domains`:
+```
+code            TEXT PRIMARY KEY
+name_en         TEXT NOT NULL
+name_pt         TEXT NOT NULL
+description_en  TEXT
+description_pt  TEXT
+sort_order      INTEGER NOT NULL DEFAULT 0
+active          BOOLEAN NOT NULL DEFAULT TRUE
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+Seeded codes (see `parameter_model.md` §3.1–3.3 and `docs/tables.md`):
+- `endpoints`: `acute_toxicity`, `skin_irritation`, `skin_corrosion`, `ocular_irritation`, `skin_sensitisation`, `phototoxicity`, `genotoxicity`, `pyrogenicity`, `skin_absorption`
+- `routes`: `oral`, `intraperitoneal`, `intravenous`, `dermal`, `ocular`, `inhalation`, `in_vitro`, `other`
+- `study_domains`: `pharma`, `cosmetics`, `chemical_safety`, `general`
+
+**RouteEndpoint** *(route ↔ endpoint compatibility matrix for soft filtering)*
+```
+route_code      TEXT NOT NULL REFERENCES routes(code) ON DELETE CASCADE
+endpoint_code   TEXT NOT NULL REFERENCES endpoints(code) ON DELETE CASCADE
+PRIMARY KEY (route_code, endpoint_code)
+```
+
+**User** *(source of truth: `002_app_tables.sql`)*
 ```
 id           SERIAL PRIMARY KEY
 email        TEXT NOT NULL UNIQUE
@@ -260,6 +291,12 @@ reviewed_at     TIMESTAMPTZ
 ```
 
 > **Recommendation entity removed:** the original spec had a separate Recommendation table. This was collapsed into `queries.results_snapshot JSONB` to simplify the schema and avoid a large join table at MVP scale. Feedback now references `(query_id, method_id)` directly instead of `recommendation_id`.
+
+**SchemaMigrations** *(internal — created by `db/connection.py`, not a numbered migration)*
+```
+filename    TEXT PRIMARY KEY    -- e.g. '001_initial.sql'
+applied_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
 
 #### Retrieval approach (MVP)
 
@@ -337,10 +374,18 @@ Revisit at Phase 3 when the corpus exceeds ~200 methods (pgvector extension avai
 │   │   └── db/
 │   │       ├── connection.py        # asyncpg connection pool (DATABASE_URL)
 │   │       └── migrations/
-│   │           ├── 001_initial.sql  # methods + method_keywords
-│   │           └── 002_app_tables.sql  # users, magic_link_tokens, queries, feedback, suggestions
+│   │           ├── 001_initial.sql                    # methods, method_validation_contexts, method_keywords
+│   │           ├── 002_app_tables.sql                 # users, magic_link_tokens, queries, feedback, suggestions
+│   │           ├── 003_vocabulary_tables.sql          # endpoints, routes, study_domains, route_endpoints
+│   │           ├── 004_rename_study_domain.sql        # application_area → study_domain (legacy upgrade)
+│   │           ├── 005_method_validation_contexts.sql # ADR-021/022 legacy upgrade
+│   │           ├── 006_route_other.sql                # seeds routes.other
+│   │           ├── 007_add_3r_rationale_columns.sql   # ADR-023 step 1 (add rationale columns)
+│   │           └── manual/
+│   │               └── 008_drop_category_3r.sql       # ADR-023 step 4 (gated; not auto-applied)
 │   ├── scripts/
 │   │   ├── embed_methods.py         # generate embeddings for active methods (asyncpg)
+│   │   ├── backfill_3r_rationales.py # ADR-023 steps 2–4 (backfill, gate, optional DROP)
 │   │   └── smoke_test.py            # manual smoke test (CI optional per ADR-001)
 │   ├── tests/
 │   ├── docs/
@@ -547,10 +592,12 @@ All interfaces defined here before any handler is written. OpenAPI spec generate
         "name_pt": string,
         "description_en": string,
         "description_pt": string,
-        "category_3r": ["replacement"|"reduction"|"refinement"],   -- array (ADR-021)
+        "replacement_rationale": string|null,   -- non-null/non-empty ⇒ replacement (ADR-023)
+        "reduction_rationale": string|null,
+        "refinement_rationale": string|null,
+        "category_3r": ["replacement"|"reduction"|"refinement"],   -- derived from rationale columns
         "endpoint_category": string,
-        "oecd_tg_ref": "TG 439"|null,
-        "primary_lit_url": string|null
+        "oecd_tg_ref": "TG 439"|null
       },
       "validation_contexts": [         -- all contexts for this method × matched study_domain (ADR-022)
         {

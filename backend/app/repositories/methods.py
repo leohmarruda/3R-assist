@@ -13,7 +13,9 @@ class MethodRepository:
     _SELECT_ACTIVE = """
         SELECT
             id, slug, name_en, name_pt, description_en, description_pt,
-            text_for_embedding, category_3r, endpoint_category, study_domain,
+            text_for_embedding,
+            replacement_rationale, reduction_rationale, refinement_rationale,
+            endpoint_category, study_domain,
             oecd_tg_ref, ncit_id, source_db,
             routes_applicable, embedding_json, active, created_at, updated_at
         FROM methods
@@ -54,17 +56,6 @@ class MethodRepository:
         return methods, dict(contexts_by_method)
 
     @staticmethod
-    def _parse_json_list(value) -> list[str]:
-        if value is None:
-            return []
-        if isinstance(value, list):
-            return value
-        if isinstance(value, str):
-            parsed = json.loads(value) if value else []
-            return parsed if isinstance(parsed, list) else [parsed]
-        return list(value)
-
-    @staticmethod
     def _row_to_method(row) -> Method:
         routes = row["routes_applicable"]
         if isinstance(routes, str):
@@ -74,8 +65,6 @@ class MethodRepository:
         if isinstance(embedding, str):
             embedding = json.loads(embedding) if embedding else None
 
-        category_3r = MethodRepository._parse_json_list(row["category_3r"])
-
         return Method(
             id=row["id"],
             slug=row["slug"],
@@ -84,7 +73,9 @@ class MethodRepository:
             description_en=row["description_en"],
             description_pt=row["description_pt"],
             text_for_embedding=row["text_for_embedding"],
-            category_3r=category_3r,
+            replacement_rationale=row["replacement_rationale"],
+            reduction_rationale=row["reduction_rationale"],
+            refinement_rationale=row["refinement_rationale"],
             endpoint_category=row["endpoint_category"],
             study_domain=row["study_domain"],
             oecd_tg_ref=row["oecd_tg_ref"],

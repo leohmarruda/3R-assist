@@ -102,18 +102,37 @@ Métodos com maior probabilidade de contexto EU validado:
 - TG 437/438/460: EU Cosmetics Reg — irritação ocular
 - TG 429/442C/D/E: EU Cosmetics Reg + REACH — sensibilização
 
-### 5. category_3r — confirmar casos ambíguos (ADR-021)
+### 5. Rationales 3R — preencher nos 25 seeded (ADR-023)
 
-| Slug | Valor atual | Questão |
-|---|---|---|
-| oecd-tg429-llna | `["replacement"]` | Substitui cobaia (replacement) mas ainda usa camundongo. CEUAs brasileiras classificam como replacement ou reduction/refinement? |
-| oecd-tg442a-llna-da | `["refinement"]` | Refinamento do TG 429 (sem radioatividade). Também é replacement em relação ao GPMT? |
-| oecd-tg442b-llna-brdu | `["refinement"]` | Mesma questão do TG 442A |
+Cada R aplicável tem uma coluna TEXT: `replacement_rationale`, `reduction_rationale`, `refinement_rationale`.
+Valor não-nulo/não-vazio = o método qualifica para aquele R; o texto é a justificativa auditável.
 
-Para alterar:
+Após a migração `007` + `backfill_3r_rationales.py`, colunas aplicáveis contêm o placeholder
+`[PENDENTE — ver category_3r]`. Substituir pelo texto real (PT ou EN, preferência CEUA).
+
+Colunas `NULL` = aquele R **não se aplica** (não preencher com string vazia).
+
+Para preencher:
 ```sql
-UPDATE methods SET category_3r = '["reduction","refinement"]'::jsonb WHERE slug = '<slug>';
+UPDATE methods
+SET replacement_rationale = '<justificativa auditável>'
+WHERE slug = '<slug>';
+-- idem reduction_rationale / refinement_rationale
 ```
+
+Listar pendências (gate antes do DROP de `category_3r`):
+```bash
+python scripts/backfill_3r_rationales.py --check
+```
+
+**Casos ambíguos (decidir quais colunas preencher e com qual texto):**
+
+| Slug | Placeholder inicial | Questão |
+|---|---|---|
+| oecd-tg429-llna | `replacement_rationale` | Substitui cobaia (replacement) mas ainda usa camundongo. CEUAs brasileiras classificam como replacement ou também reduction/refinement? |
+| oecd-tg442a-llna-da | `refinement_rationale` | Refinamento do TG 429 (sem radioatividade). Também é replacement em relação ao GPMT? Se sim, preencher `replacement_rationale` e deixar `refinement_rationale` (ou ambos). |
+| oecd-tg442b-llna-brdu | `refinement_rationale` | Mesma questão do TG 442A |
+| oecd-tg420 / 423 / 425 | `reduction_rationale` + `refinement_rationale` | Confirmar se CEUAs reconhecem a dupla classificação |
 
 ### 6. Keywords — complementar com terminologia CEUA
 
@@ -123,7 +142,8 @@ A seção de keywords é um conjunto representativo. Adicionar termos que você 
 
 ## Revisão por método
 
-> Para cada método: confirmar campos do método + preencher contextos de validação faltantes.
+> Para cada método: confirmar campos do método + preencher `*_rationale` (ADR-023) + contextos de validação faltantes.
+> Placeholders `[PENDENTE — ver category_3r]` devem ser substituídos por justificativa real antes do DROP de `category_3r`.
 > Os contextos `brazil` e `oecd` já estão seeded onde confirmados; indicar se precisam de correção.
 > Adicionar `eu`, `us`, e qualquer contexto por `study_domain` específico que se aplicar.
 
@@ -150,6 +170,7 @@ VALUES
 - ☐ `description_pt` clara para pesquisador sem familiaridade?
 - ☐ `source_db` confirmado (ver campo global)
 - ☐ `text_for_embedding` adequado?
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil (CONCEA, RN 18/2014) · oecd (TG 439)
 
@@ -169,6 +190,7 @@ VALUES
 
 **Campos:**
 - ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 431)
 
@@ -184,6 +206,7 @@ VALUES
 ### 4. oecd-tg430-ter-corrosion
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 430)
 
@@ -198,6 +221,7 @@ VALUES
 ### 5. oecd-tg435-membrane-barrier
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 - ☐ Nota de aplicabilidade (pH < 2 ou > 11,5) está clara para o usuário no S3?
 
 **Contextos seeded:** brazil · oecd (TG 435)
@@ -213,6 +237,7 @@ VALUES
 ### 6. oecd-tg437-bcop
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 437)
 
@@ -229,6 +254,7 @@ VALUES
 ### 7. oecd-tg438-ice
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 438)
 
@@ -244,6 +270,7 @@ VALUES
 ### 8. oecd-tg492-rce ⚠️ sem contexto brazil
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** oecd only (TG 492, publicado 2019, pós-RN 18/2014)
 
@@ -261,6 +288,7 @@ VALUES
 ### 9. oecd-tg460-fluorescein-leakage
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 460)
 
@@ -275,6 +303,7 @@ VALUES
 ### 10–12. oecd-tg442c-dpra / oecd-tg442d-keratinosens / oecd-tg442e-hclat ⚠️ sem brazil
 
 **Campos (cada um):** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** oecd only (TG 442C/D/E publicados 2015–2017, pós-RN 18)
 
@@ -290,10 +319,11 @@ VALUES
 
 ---
 
-### 13. oecd-tg429-llna ⚠️ category_3r a confirmar
+### 13. oecd-tg429-llna ⚠️ rationales 3R a confirmar
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
-- ☐ **`category_3r`**: atualmente `["replacement"]`. CEUAs brasileiras tratam LLNA como replacement do GPMT/Buehler (cobaia) ou como reduction/refinement (ainda usa camundongo)? Confirmar e atualizar se necessário.
+- ☐ **`replacement_rationale`**: placeholder inicial (substitui GPMT/Buehler em cobaia). Confirmar se CEUAs tratam LLNA como replacement; se sim, preencher justificativa.
+- ☐ **`reduction_rationale` / `refinement_rationale`**: preencher **somente se** CEUAs também classificarem LLNA nesses Rs (ainda usa camundongo); caso contrário deixar `NULL`.
 
 **Contextos seeded:** brazil · oecd (TG 429)
 
@@ -306,10 +336,11 @@ VALUES
 
 ---
 
-### 14–15. oecd-tg442a-llna-da / oecd-tg442b-llna-brdu ⚠️ category_3r a confirmar
+### 14–15. oecd-tg442a-llna-da / oecd-tg442b-llna-brdu ⚠️ rationales 3R a confirmar
 
 **Campos (cada):** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
-- ☐ **`category_3r`**: atualmente `["refinement"]`. Também é replacement em relação ao GPMT? Confirmar.
+- ☐ **`refinement_rationale`**: placeholder inicial (elimina radioatividade vs TG 429). Preencher justificativa.
+- ☐ **`replacement_rationale`**: preencher **somente se** também for replacement em relação ao GPMT; caso contrário deixar `NULL`.
 
 **Contextos seeded:** brazil · oecd (TG 442A / TG 442B)
 
@@ -324,6 +355,7 @@ VALUES
 ### 16. oecd-tg432-3t3nru
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 432)
 
@@ -339,6 +371,7 @@ VALUES
 ### 17. oecd-tg428-skin-absorption-vitro
 
 **Campos:** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 428)
 
@@ -354,6 +387,7 @@ VALUES
 ### 18–20. oecd-tg471-ames / oecd-tg476-hprt / oecd-tg487-micronucleus
 
 **Campos (cada):** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil · oecd (TG 471 / TG 476 / TG 487)
 
@@ -376,6 +410,7 @@ VALUES
 - ☐ `source_db` — confirmar: `FARMACOPEIA_BR` ou outra fonte primária?
 - ☐ `oecd_tg_ref` — atualmente NULL. MAT não tem TG OECD standalone; verificar se GD 129 ou EP 2.6.30 é a referência adequada
 - ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder por justificativa auditável
 
 **Contextos seeded:** brazil ⚠️ (ANVISA como regulatory_body — [VERIFY])
 
@@ -404,26 +439,29 @@ VALUES
 - ☐ `description_pt`
 - ☐ `source_db` — `NICEATM`; confirmar referência primária (Barranco et al. — qual publicação?)
 - ☐ `text_for_embedding`
+- ☐ **`replacement_rationale`**: substituir placeholder (substitui dose-ranging in vivo)
+- ☐ **`reduction_rationale`**: substituir placeholder (reduz animais no estudo principal)
 
 **Contextos seeded:** brazil (CONCEA, via GD 129 em RN 18 VI-d) · oecd (GD 129) · us (ICCVAM)
 
-- ☐ **Confirmar** referência cruzada: GD 129 → RN 18 Art. 2 VI-d. Se confirmada, atualizar `regulatory_ref` do contexto brazil.
-- ☐ Adicionar `primary_lit_url` para publicação Barranco et al.:
+- ☐ **Confirmar** referência cruzada: GD 129 → RN 18 Art. 2 VI-d. Se confirmada, atualizar `regulatory_ref` do contexto brazil:
   ```sql
   UPDATE method_validation_contexts
   SET regulatory_ref = 'RN 18/2014 Art. 2 VI-d (via OECD GD 129)'
   WHERE method_id = (SELECT id FROM methods WHERE slug = 'niceatm-cytotox-basal-barranco')
     AND jurisdiction = 'brazil';
   ```
+- ☐ Confirmar publicação Barranco et al. e registrar link em `regulatory_url` do contexto `us` (ICCVAM/NICEATM), se aplicável.
 
 **Notas:**
 
 ---
 
-### 23–25. oecd-tg420 / oecd-tg423 / oecd-tg425 ⚠️ category_3r a confirmar
+### 23–25. oecd-tg420 / oecd-tg423 / oecd-tg425 ⚠️ rationales 3R a confirmar
 
 **Campos (cada):** ☐ `name_pt` · ☐ `description_pt` · ☐ `source_db` · ☐ `text_for_embedding`
-- ☐ **`category_3r`**: atualmente `["reduction","refinement"]`. Confirmar se CEUAs brasileiras reconhecem essa dupla classificação, ou se preferem um único valor.
+- ☐ **`reduction_rationale`**: substituir placeholder (menos animais que LD50 clássica). Confirmar se CEUAs reconhecem reduction.
+- ☐ **`refinement_rationale`**: substituir placeholder (endpoint de toxicidade evidente / procedimento humanizado). Confirmar se CEUAs reconhecem refinement; se preferirem um único R, preencher só esse e deixar o outro `NULL`.
 
 **Contextos seeded:** brazil · oecd (TG 420 / TG 423 / TG 425)
 
@@ -447,4 +485,4 @@ VALUES
 
 ---
 
-*Criado em M3. Atualizado com study_domain (ADR-020), category_3r JSONB (ADR-021), method_validation_contexts (ADR-022).*
+*Criado em M3. Atualizado com study_domain (ADR-020), method_validation_contexts (ADR-022), colunas `*_rationale` por R (ADR-023; supersede ADR-021).*

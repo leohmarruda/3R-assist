@@ -49,6 +49,10 @@
     "addRow": "Add row",
     "ok": "OK",
     "addRowError": "Could not add row.",
+    "requiredFieldsMissing": "Required fields missing: {{fields}}",
+    "selectRequired": "Select…",
+    "selectOptional": "— None —",
+
 
 
     "database": {

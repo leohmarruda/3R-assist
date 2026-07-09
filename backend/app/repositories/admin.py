@@ -9,7 +9,18 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from app.db.connection import get_pool
+import asyncpg
+
+from app.db.connection import close_pool, get_pool
+
+
+async def _with_fresh_pool_retry(operation):
+    """Retry once after closing the pool when a migration invalidated cached plans."""
+    try:
+        return await operation()
+    except asyncpg.exceptions.InvalidCachedStatementError:
+        await close_pool()
+        return await operation()
 
 _IDENT_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 _AUTO_DEFAULT_MARKERS = (
@@ -202,6 +213,124 @@ class AdminRepository:
         )
         return [dict(row) for row in rows]
 
+    async def _foreign_keys(self, conn, table_name: str) -> dict[str, dict[str, str]]:
+        rows = await conn.fetch(
+            """
+            SELECT
+                att.attname AS column_name,
+                ref_table.relname AS foreign_table,
+                ref_att.attname AS foreign_column
+            FROM pg_catalog.pg_constraint con
+            JOIN pg_catalog.pg_class rel ON rel.oid = con.conrelid
+            JOIN pg_catalog.pg_namespace nsp ON nsp.oid = rel.relnamespace
+            JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS cols(attnum, ord)
+              ON TRUE
+            JOIN pg_catalog.pg_attribute att
+              ON att.attrelid = con.conrelid
+             AND att.attnum = cols.attnum
+            JOIN pg_catalog.pg_class ref_table ON ref_table.oid = con.confrelid
+            JOIN LATERAL unnest(con.confkey) WITH ORDINALITY AS ref_cols(attnum, ord)
+              ON ref_cols.ord = cols.ord
+            JOIN pg_catalog.pg_attribute ref_att
+              ON ref_att.attrelid = con.confrelid
+             AND ref_att.attnum = ref_cols.attnum
+            WHERE con.contype = 'f'
+              AND nsp.nspname = 'public'
+              AND rel.relname = $1
+            ORDER BY cols.ord
+            """,
+            table_name,
+        )
+        foreign_keys: dict[str, dict[str, str]] = {}
+        for row in rows:
+            column = row["column_name"]
+            if column in foreign_keys:
+                continue
+            foreign_keys[column] = {
+                "table": row["foreign_table"],
+                "column": row["foreign_column"],
+            }
+        return foreign_keys
+
+
+    async def _label_column(
+        self, conn, table_name: str, value_column: str
+    ) -> str | None:
+        columns = [
+            row["column_name"]
+            for row in await conn.fetch(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = $1
+                ORDER BY ordinal_position
+                """,
+                table_name,
+            )
+        ]
+        for candidate in (
+            "slug",
+            "name_en",
+            "name",
+            "code",
+            "title",
+            "label",
+            "keyword",
+        ):
+            if candidate in columns and candidate != value_column:
+                return candidate
+        return None
+
+    async def _foreign_key_options(
+        self,
+        conn,
+        *,
+        foreign_table: str,
+        foreign_column: str,
+        limit: int = 500,
+    ) -> list[dict[str, Any]]:
+        self._validate_ident(foreign_table, "table name")
+        self._validate_ident(foreign_column, "column name")
+
+        label_column = await self._label_column(conn, foreign_table, foreign_column)
+        if label_column:
+            self._validate_ident(label_column, "column name")
+            rows = await conn.fetch(
+                f'SELECT "{foreign_column}" AS value, '
+                f'"{label_column}" AS label '
+                f'FROM "{foreign_table}" '
+                f'ORDER BY "{label_column}", "{foreign_column}" '
+                f"LIMIT $1",
+                limit,
+            )
+            options = []
+            for row in rows:
+                value = _serialize_value(row["value"])
+                label = row["label"]
+                label_text = (
+                    f"{value} — {label}"
+                    if label is not None and str(label) != str(value)
+                    else str(value)
+                )
+                options.append({"value": value, "label": label_text})
+            return options
+
+        rows = await conn.fetch(
+            f'SELECT "{foreign_column}" AS value '
+            f'FROM "{foreign_table}" '
+            f'ORDER BY "{foreign_column}" '
+            f"LIMIT $1",
+            limit,
+        )
+        return [
+            {
+                "value": _serialize_value(row["value"]),
+                "label": str(_serialize_value(row["value"])),
+            }
+            for row in rows
+        ]
+
     async def fetch_table(
         self,
         table_name: str,
@@ -210,7 +339,19 @@ class AdminRepository:
         offset: int = 0,
     ) -> dict[str, Any]:
         self._validate_ident(table_name, "table name")
+        return await _with_fresh_pool_retry(
+            lambda: self._fetch_table_once(
+                table_name, limit=limit, offset=offset
+            )
+        )
 
+    async def _fetch_table_once(
+        self,
+        table_name: str,
+        *,
+        limit: int,
+        offset: int,
+    ) -> dict[str, Any]:
         pool = await get_pool()
         async with pool.acquire() as conn:
             if not await self._table_exists(conn, table_name):
@@ -230,7 +371,8 @@ class AdminRepository:
                     col_description(a.attrelid, a.attnum) AS comment,
                     pg_get_expr(ad.adbin, ad.adrelid) AS column_default,
                     a.attidentity AS identity,
-                    a.attgenerated AS generated
+                    a.attgenerated AS generated,
+                    a.attnotnull AS not_null
                 FROM pg_catalog.pg_attribute a
                 JOIN pg_catalog.pg_class c ON c.oid = a.attrelid
                 JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
@@ -247,6 +389,14 @@ class AdminRepository:
                 table_name,
             )
             primary_key = await self._primary_key_columns(conn, table_name)
+            foreign_keys = await self._foreign_keys(conn, table_name)
+            column_options: dict[str, list[dict[str, Any]]] = {}
+            for column, reference in foreign_keys.items():
+                column_options[column] = await self._foreign_key_options(
+                    conn,
+                    foreign_table=reference["table"],
+                    foreign_column=reference["column"],
+                )
 
         serialized_rows = [_serialize_row(row) for row in rows]
         columns = [row["column_name"] for row in column_rows]
@@ -256,6 +406,16 @@ class AdminRepository:
         column_types = {
             row["column_name"]: row["data_type"] for row in column_rows
         }
+        required_columns = [
+            row["column_name"]
+            for row in column_rows
+            if row["not_null"]
+            and not _is_autogenerated_column(
+                identity=row["identity"],
+                generated=row["generated"],
+                column_default=row["column_default"],
+            )
+        ]
         auto_columns = [
             row["column_name"]
             for row in column_rows
@@ -271,7 +431,10 @@ class AdminRepository:
             "columns": columns,
             "column_comments": column_comments,
             "column_types": column_types,
+            "required_columns": required_columns,
             "auto_columns": auto_columns,
+            "foreign_keys": foreign_keys,
+            "column_options": column_options,
             "primary_key": primary_key,
             "rows": serialized_rows,
             "total": total,
@@ -322,7 +485,16 @@ class AdminRepository:
         values: dict[str, Any],
     ) -> dict[str, Any]:
         self._validate_ident(table_name, "table name")
+        return await _with_fresh_pool_retry(
+            lambda: self._insert_row_once(table_name, values=values)
+        )
 
+    async def _insert_row_once(
+        self,
+        table_name: str,
+        *,
+        values: dict[str, Any],
+    ) -> dict[str, Any]:
         pool = await get_pool()
         async with pool.acquire() as conn:
             if not await self._table_exists(conn, table_name):
@@ -394,7 +566,23 @@ class AdminRepository:
     ) -> dict[str, Any]:
         self._validate_ident(table_name, "table name")
         self._validate_ident(column, "column name")
+        return await _with_fresh_pool_retry(
+            lambda: self._update_cell_once(
+                table_name,
+                primary_key=primary_key,
+                column=column,
+                value=value,
+            )
+        )
 
+    async def _update_cell_once(
+        self,
+        table_name: str,
+        *,
+        primary_key: dict[str, Any],
+        column: str,
+        value: Any,
+    ) -> dict[str, Any]:
         pool = await get_pool()
         async with pool.acquire() as conn:
             if not await self._table_exists(conn, table_name):

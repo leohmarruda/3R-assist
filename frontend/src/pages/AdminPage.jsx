@@ -115,8 +115,19 @@ function CloseIconButton({ label, disabled, onClick }) {
   )
 }
 
-function AddRowModal({ table, columns, comments, types, onClose, onCreated }) {
+function AddRowModal({
+  table,
+  columns,
+  comments,
+  types,
+  requiredColumns = [],
+  foreignKeys = {},
+  columnOptions = {},
+  onClose,
+  onCreated,
+}) {
   const { t } = useTranslation()
+  const requiredSet = new Set(requiredColumns)
   const [values, setValues] = useState(() =>
     Object.fromEntries(columns.map((column) => [column, ''])),
   )
@@ -133,8 +144,25 @@ function AddRowModal({ table, columns, comments, types, onClose, onCreated }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [onClose, saving])
 
+  function updateValue(column, value) {
+    setValues((current) => ({
+      ...current,
+      [column]: value,
+    }))
+  }
+
   async function submit() {
     if (saving) return
+
+    const missing = columns.filter(
+      (column) =>
+        requiredSet.has(column) && String(values[column] ?? '').trim() === '',
+    )
+    if (missing.length > 0) {
+      setError(t('admin.requiredFieldsMissing', { fields: missing.join(', ') }))
+      return
+    }
+
     setSaving(true)
     setError(null)
     try {
@@ -146,6 +174,9 @@ function AddRowModal({ table, columns, comments, types, onClose, onCreated }) {
       setSaving(false)
     }
   }
+
+  const fieldClass =
+    'w-full rounded border border-border-subtle bg-surface-container-lowest px-3 py-2 font-metadata text-metadata text-on-surface outline-none focus:border-primary'
 
   return (
     <div
@@ -187,6 +218,11 @@ function AddRowModal({ table, columns, comments, types, onClose, onCreated }) {
           {columns.map((column, index) => {
             const hint = comments?.[column]
             const type = types?.[column]
+            const required = requiredSet.has(column)
+            const options = columnOptions?.[column] ?? []
+            const foreignKey = foreignKeys?.[column]
+            const useSelect = options.length > 0
+
             return (
               <div
                 key={column}
@@ -195,23 +231,54 @@ function AddRowModal({ table, columns, comments, types, onClose, onCreated }) {
                 <label className="block min-w-0">
                   <span className="mb-1 block font-label-caps text-label-caps uppercase text-on-surface-variant">
                     {column}
+                    {required ? (
+                      <span className="ml-0.5 text-error" aria-hidden="true">
+                        *
+                      </span>
+                    ) : null}
                     {type ? (
                       <span className="ml-1 normal-case opacity-65">({type})</span>
                     ) : null}
+                    {foreignKey ? (
+                      <span className="ml-1 normal-case opacity-65">
+                        → {foreignKey.table}.{foreignKey.column}
+                      </span>
+                    ) : null}
                   </span>
-                  <input
-                    type="text"
-                    autoFocus={index === 0}
-                    value={values[column] ?? ''}
-                    disabled={saving}
-                    onChange={(event) =>
-                      setValues((current) => ({
-                        ...current,
-                        [column]: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded border border-border-subtle bg-surface-container-lowest px-3 py-2 font-metadata text-metadata text-on-surface outline-none focus:border-primary"
-                  />
+                  {useSelect ? (
+                    <select
+                      autoFocus={index === 0}
+                      value={values[column] ?? ''}
+                      disabled={saving}
+                      required={required}
+                      onChange={(event) => updateValue(column, event.target.value)}
+                      className={fieldClass}
+                    >
+                      <option value="">
+                        {required
+                          ? t('admin.selectRequired')
+                          : t('admin.selectOptional')}
+                      </option>
+                      {options.map((option) => (
+                        <option
+                          key={String(option.value)}
+                          value={String(option.value)}
+                        >
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      autoFocus={index === 0}
+                      value={values[column] ?? ''}
+                      disabled={saving}
+                      required={required}
+                      onChange={(event) => updateValue(column, event.target.value)}
+                      className={fieldClass}
+                    />
+                  )}
                 </label>
                 <p className="whitespace-pre-wrap font-metadata text-metadata text-on-secondary-container opacity-65 sm:pt-6">
                   {hint || t('admin.noCommentHint')}
@@ -988,6 +1055,9 @@ function DatabasePanel() {
               )}
               comments={tableData.column_comments}
               types={tableData.column_types}
+              requiredColumns={tableData.required_columns}
+              foreignKeys={tableData.foreign_keys}
+              columnOptions={tableData.column_options}
               onClose={() => setShowAddRow(false)}
               onCreated={async () => {
                 setShowAddRow(false)

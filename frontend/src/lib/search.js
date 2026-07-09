@@ -50,17 +50,45 @@ export function formatOecdReference(ref) {
   return `OECD ${trimmed}`
 }
 
-export function primaryThreeR(category3r) {
-  const values = Array.isArray(category3r) ? category3r : [category3r].filter(Boolean)
+const RATIONALE_FIELDS = {
+  replacement: 'replacement_rationale',
+  reduction: 'reduction_rationale',
+  refinement: 'refinement_rationale',
+}
+
+function nonemptyRationale(value) {
+  return typeof value === 'string' && value.trim() !== ''
+}
+
+/** 3R classes present on a method (non-null/non-empty rationale columns). */
+export function methodThreeRClasses(method) {
+  if (!method) return []
+  if (method.category_3r?.length) {
+    return ['replacement', 'reduction', 'refinement'].filter((key) =>
+      method.category_3r.includes(key),
+    )
+  }
+  return ['replacement', 'reduction', 'refinement'].filter((key) =>
+    nonemptyRationale(method[RATIONALE_FIELDS[key]]),
+  )
+}
+
+export function methodThreeRBadges(method, t) {
+  return methodThreeRClasses(method).map((type) => ({
+    type,
+    label: t(`s3.threeR.${type}`),
+    rationale: method?.[RATIONALE_FIELDS[type]] ?? null,
+  }))
+}
+
+export function primaryThreeR(methodOrCategory) {
+  const values = Array.isArray(methodOrCategory)
+    ? methodOrCategory
+    : methodThreeRClasses(methodOrCategory)
   for (const preferred of ['replacement', 'reduction', 'refinement']) {
     if (values.includes(preferred)) return preferred
   }
   return values[0] ?? 'replacement'
-}
-
-export function formatThreeRLabel(category3r, t) {
-  const values = Array.isArray(category3r) ? category3r : [category3r].filter(Boolean)
-  return values.map((value) => t(`s3.threeR.${value}`)).join(' · ')
 }
 
 export function primaryValidationContext(contexts = []) {

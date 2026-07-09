@@ -230,7 +230,7 @@ All compressions applied must be documented in `execution-log.md`.
 
 ## ADR-013 — Database: PostgreSQL (Neon / Vercel Postgres) — supersedes ADR-004
 
-**Decision:** PostgreSQL via Neon (Vercel Postgres) for both development and production. Single driver, single schema dialect.
+**Decision:** **PostgreSQL only** via Neon (Vercel Postgres) for both development and production. Not SQLite. Single driver (`asyncpg`), single schema dialect.
 
 **Context:** M3 Database — triggered during methods schema implementation when Vercel Postgres emerged as the zero-friction option for the existing Vercel-hosted frontend stack.
 
@@ -440,6 +440,8 @@ Adicionalmente, o vocabulário original de 4 valores (`pharma`, `cosmetics`, `ch
 
 ## ADR-021 — `category_3r` de TEXT para JSONB (múltiplos Rs por método)
 
+**Status:** Superseded by [ADR-023](#adr-023--colunas-text-de-rationale-por-r-substitui-category_3r-jsonb).
+
 **Decision:** `category_3r TEXT NOT NULL` substituído por `category_3r JSONB NOT NULL` — array de strings, mesmo padrão de `routes_applicable`.
 
 **Context:** Um método pode satisfazer múltiplos Rs simultaneamente: TG 420/423/425 reduzem o número de animais (reduction) E refinam o procedimento eliminando a letalidade como endpoint obrigatório (refinement). LLNA:DA e LLNA:BrdU eliminam radioatividade em relação ao TG 429 (refinement) e substituem os testes em cobaia (replacement). O campo TEXT forçava uma escolha arbitrária que perdia informação auditável e afetava o filtro do S3.
@@ -466,6 +468,8 @@ Adicionalmente, o vocabulário original de 4 valores (`pharma`, `cosmetics`, `ch
 - `karynn_review_checklist.md`: campo `category_3r` adicionado como item de revisão para os casos ambíguos.
 - `spec.md` §2.6 schema `Method` + §2.3 S3 description.
 
+**Superseded because:** flags JSONB sem justificativa auditável; ADR-023 move cada R para uma coluna TEXT nullable cujo valor *é* a rationale.
+
 ---
 
 ## ADR-022 — `method_validation_contexts`: validação por método × domínio × jurisdição; jurisdições específicas
@@ -486,6 +490,7 @@ CREATE TABLE method_validation_contexts (
     regulatory_ref    TEXT,             -- e.g. 'RN 18/2014 Art. 2' | 'TG 439' | 'Reg 1223/2009'
     regulatory_url    TEXT,
     notes             TEXT,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (method_id, study_domain, jurisdiction)
 );
 ```
@@ -523,3 +528,35 @@ WHERE EXISTS (
 - `app/repositories/methods.py`: JOIN + GROUP BY para agregar contextos por método.
 - Frontend S3: múltiplos badges jurisdição/validação por card.
 - H5 impact: Karynn deve registrar tempo por entrada incluindo preenchimento de contextos — novo dado para estimativa de manutenção.
+
+---
+
+## ADR-023 — Colunas TEXT de rationale por R (substitui `category_3r` JSONB)
+
+**Decision:** `category_3r JSONB` substituído por três colunas TEXT nullable em `methods`:
+
+- `replacement_rationale`
+- `reduction_rationale`
+- `refinement_rationale`
+
+Presença de valor não-nulo/não-vazio = o método qualifica para aquele R. O texto *é* a justificativa auditável — não há coluna companion separada de flag.
+
+**Context:** ADR-021 permitia múltiplos Rs, mas só como flags. CEUAs e curadoria precisam de rationale explícita (por que este método conta como replacement vs reduction). Colunas TEXT por R unificam qualificação e auditoria.
+
+**Filtro:** `replacement_rationale IS NOT NULL` (idem reduction/refinement), semântica OR no filtro S3 — métodos com *qualquer* R selecionado. API ainda expõe `category_3r` derivado das colunas preenchidas para compatibilidade.
+
+**Migração em 4 etapas (não combinar DROP+ADD na mesma transação):**
+
+1. `007_add_3r_rationale_columns.sql` — ADD das três colunas; `category_3r` permanece (fonte de verdade de quais Rs precisam de texto). Auto-aplicada por `migrate.py`.
+2. `scripts/backfill_3r_rationales.py` — para cada R em `category_3r`, insere placeholder `'[PENDENTE — ver category_3r]'` (não string vazia), distinguindo “precisa preencher” de “não se aplica”.
+3. Gate — só prosseguir quando a query de pendências retornar zero linhas (`backfill_3r_rationales.py --check`).
+4. `manual/008_drop_category_3r.sql` — DROP de `category_3r` via `backfill_3r_rationales.py --apply-drop` (não auto-aplicada; falha se o gate ainda tiver linhas).
+
+**Reversibility:** Moderada — schema + backfill + checklist Karynn.
+
+**Consequences:**
+- `app/repositories/methods.py`: SELECT das colunas rationale; qualificação via `IS NOT NULL` / texto não-vazio.
+- Frontend S3 `ResultCard`: um badge por coluna não-nula; `title`/tooltip = conteúdo da rationale.
+- `karynn_review_checklist.md`: preencher `*_rationale` nos 25 seeded (casos ambíguos 13, 14–15, 23–25 incluídos).
+- `spec.md` §2.6, `tables.md`: schema Method atualizado.
+- ADR-021 marcado superseded.

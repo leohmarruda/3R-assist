@@ -7,12 +7,25 @@ class AdminTablesResponse(BaseModel):
     tables: list[str]
 
 
+class AdminForeignKeyRef(BaseModel):
+    table: str
+    column: str
+
+
+class AdminColumnOption(BaseModel):
+    value: Any
+    label: str
+
+
 class AdminTableDataResponse(BaseModel):
     table: str
     columns: list[str]
     column_comments: dict[str, str | None] = Field(default_factory=dict)
     column_types: dict[str, str] = Field(default_factory=dict)
+    required_columns: list[str] = Field(default_factory=list)
     auto_columns: list[str] = Field(default_factory=list)
+    foreign_keys: dict[str, AdminForeignKeyRef] = Field(default_factory=dict)
+    column_options: dict[str, list[AdminColumnOption]] = Field(default_factory=dict)
     primary_key: list[str] = Field(default_factory=list)
     rows: list[dict[str, Any]]
     total: int

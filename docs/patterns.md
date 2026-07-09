@@ -1,8 +1,8 @@
 # Pattern Preference Register — 3R Assist
 
 > Copied from Framework v1.5 Appendix A at Bootstrap (M0.4).
-> Reviewed against the expected stack: Python backend, RAG pipeline, SQLite,
-> local embeddings model, Anthropic API, web frontend (framework TBD in M2 Phase B).
+> Reviewed against the expected stack: Python backend, RAG pipeline, **PostgreSQL**
+> (not SQLite — ADR-013), local embeddings model, Anthropic API, React/Vite frontend.
 >
 > **N/A entries** = not applicable to this stack.
 > **Deviations** = require an ADR entry naming the standard being replaced and the gap.
