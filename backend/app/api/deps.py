@@ -6,6 +6,8 @@ from app.config import get_settings
 from app.repositories.admin import AdminRepository
 from app.repositories.methods import MethodRepository
 from app.services.extraction import ExtractionService
+from app.services.policy_extraction import PolicyExtractionService
+from app.services.policy_method_match import PolicyMethodMatchService
 from app.services.retrieval import RetrievalService
 
 
@@ -34,6 +36,14 @@ def get_admin_repository() -> AdminRepository:
 
 def get_extraction_service() -> ExtractionService:
     return ExtractionService(llm=get_llm_adapter())
+
+
+def get_policy_extraction_service() -> PolicyExtractionService:
+    return PolicyExtractionService(llm=get_llm_adapter())
+
+
+def get_policy_method_match_service() -> PolicyMethodMatchService:
+    return PolicyMethodMatchService(repository=get_method_repository())
 
 
 def get_retrieval_service() -> RetrievalService:

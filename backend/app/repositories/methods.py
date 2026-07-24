@@ -10,14 +10,17 @@ from app.models.method import Method, MethodValidationContext
 
 
 class MethodRepository:
-    _SELECT_ACTIVE = """
-        SELECT
-            id, slug, name_en, name_pt, description_en, description_pt,
-            text_for_embedding,
-            replacement_rationale, reduction_rationale, refinement_rationale,
-            endpoint_category, study_domain,
-            oecd_tg_ref, ncit_id, source_db,
-            routes_applicable, embedding_json, active, created_at, updated_at
+    _SELECT_COLUMNS = """
+        id, slug, name_en, name_pt, description_en, description_pt,
+        text_for_embedding,
+        replacement_rationale, reduction_rationale, refinement_rationale,
+        endpoint_category, study_domain,
+        oecd_tg_ref, ncit_id, source_db,
+        routes_applicable, embedding_json, active, created_at, updated_at
+    """
+
+    _SELECT_ACTIVE = f"""
+        SELECT {_SELECT_COLUMNS}
         FROM methods
         WHERE active = TRUE
         ORDER BY slug
@@ -26,7 +29,8 @@ class MethodRepository:
     _SELECT_CONTEXTS = """
         SELECT
             method_id, study_domain, jurisdiction, validation_status,
-            regulatory_body, regulatory_ref, regulatory_url, notes
+            purpose, regulatory_status, regulatory_body, regulatory_ref,
+            regulatory_url, notes
         FROM method_validation_contexts
         WHERE method_id = ANY($1::int[])
         ORDER BY method_id, study_domain, jurisdiction
@@ -54,6 +58,67 @@ class MethodRepository:
             contexts_by_method[row["method_id"]].append(self._row_to_context(row))
 
         return methods, dict(contexts_by_method)
+
+    async def find_by_oecd_tg_ref(
+        self,
+        oecd_tg_ref: str,
+        *,
+        include_inactive: bool = True,
+    ) -> list[Method]:
+        normalized = " ".join(oecd_tg_ref.split()).strip()
+        if not normalized:
+            return []
+
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"""
+                SELECT {self._SELECT_COLUMNS}
+                FROM methods
+                WHERE oecd_tg_ref IS NOT NULL
+                  AND lower(regexp_replace(trim(oecd_tg_ref), '\\s+', ' ', 'g'))
+                      = lower($1)
+                  AND ($2::boolean OR active = TRUE)
+                ORDER BY slug
+                """,
+                normalized,
+                include_inactive,
+            )
+        return [self._row_to_method(row) for row in rows]
+
+    async def list_for_text_match(
+        self,
+        *,
+        include_inactive: bool = True,
+    ) -> list[Method]:
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"""
+                SELECT {self._SELECT_COLUMNS}
+                FROM methods
+                WHERE $1::boolean OR active = TRUE
+                ORDER BY slug
+                """,
+                include_inactive,
+            )
+        return [self._row_to_method(row) for row in rows]
+
+    async def contexts_by_method_ids(
+        self,
+        method_ids: list[int],
+    ) -> dict[int, list[MethodValidationContext]]:
+        if not method_ids:
+            return {}
+
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            context_rows = await conn.fetch(self._SELECT_CONTEXTS, method_ids)
+
+        contexts_by_method: dict[int, list[MethodValidationContext]] = defaultdict(list)
+        for row in context_rows:
+            contexts_by_method[row["method_id"]].append(self._row_to_context(row))
+        return dict(contexts_by_method)
 
     @staticmethod
     def _row_to_method(row) -> Method:
@@ -94,6 +159,8 @@ class MethodRepository:
             study_domain=row["study_domain"],
             jurisdiction=row["jurisdiction"],
             validation_status=row["validation_status"],
+            purpose=row["purpose"],
+            regulatory_status=row["regulatory_status"],
             regulatory_body=row["regulatory_body"],
             regulatory_ref=row["regulatory_ref"],
             regulatory_url=row["regulatory_url"],

@@ -66,6 +66,8 @@ Validation status and regulatory recognition for a method, scoped by study domai
 | `study_domain` | `TEXT` | NO | — | Study domain for this validation context (`general`, `pharma`, `cosmetics`, `chemical_safety`). |
 | `jurisdiction` | `TEXT` | NO | — | Regulatory jurisdiction: `brazil` (CONCEA / ANVISA / MAPA), `eu` (ECHA, EMA, Cosmetics Reg 1223/2009, EFSA), `us` (FDA, EPA, ICCVAM / NICEATM), `oecd` (OECD TG adoption). |
 | `validation_status` | `TEXT` | NO | — | Status in that context: `validated`, `accepted`, or `emerging`. |
+| `purpose` | `TEXT` | YES | — | What the method is recognized/validated for in this context (endpoint, use, or regulatory purpose). |
+| `regulatory_status` | `TEXT` | YES | — | Regulatory standing: `not_approved`, `approved`, `recommended`, or `mandatory`. |
 | `regulatory_body` | `TEXT` | YES | — | Issuing body, e.g. `CONCEA`, `ANVISA`, `ECHA`, `EMA`, `EPA`, `FDA`, `ICCVAM`, `OECD`. |
 | `regulatory_ref` | `TEXT` | YES | — | Citation, e.g. `RN 18/2014 Art. 2`, `TG 439`, `Reg 1223/2009`. |
 | `regulatory_url` | `TEXT` | YES | — | Link to the regulatory document or guideline. |
@@ -296,4 +298,7 @@ Migrations that define or alter these tables:
 | `005_method_validation_contexts.sql` | upgrades legacy schemas to ADR-021/022 |
 | `006_route_other.sql` | seeds `routes.other` |
 | `007_add_3r_rationale_columns.sql` | adds `replacement_rationale`, `reduction_rationale`, `refinement_rationale` (ADR-023 step 1) |
+| `009_add_mvc_purpose.sql` | adds `purpose` to `method_validation_contexts` (before `regulatory_body`) |
+| `010_add_mvc_regulatory_status.sql` | adds `regulatory_status` to `method_validation_contexts` (`not_approved` \| `approved` \| `recommended` \| `mandatory`) |
+| `011_mvc_purpose_status_comments.sql` | column comments for `purpose` and `regulatory_status` |
 | `manual/008_drop_category_3r.sql` | drops `category_3r` after rationale gate is clean (ADR-023 step 4; apply via `backfill_3r_rationales.py --apply-drop`) |

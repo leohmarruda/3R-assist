@@ -15,13 +15,16 @@ from app.models.protocol import (
     Route,
     Species,
 )
+from app.models.policy import PolicyExtractResponse, PolicyMethod
 
 from app.prompts.extraction import build_extraction_prompt
+from app.prompts.policy_extraction import build_policy_extraction_prompt
 
 logger = logging.getLogger(__name__)
 
 RAW_RESPONSE_LOG_LIMIT = 1200
 EXTRACTION_MAX_TOKENS = 4096
+POLICY_EXTRACTION_MAX_TOKENS = 4096
 
 
 @dataclass(frozen=True)
@@ -60,6 +63,10 @@ class LLMAdapter(ABC):
     def extract_raw_experiments(self, text: str) -> list[RawExtraction] | ExtractionError:
         pass
 
+    @abstractmethod
+    def extract_policy(self, text: str) -> PolicyExtractResponse | ExtractionError:
+        pass
+
 
 def _has_extractable_content(raw: RawExtraction) -> bool:
     return bool(raw.study_type.strip()) or bool(raw.procedure_text)
@@ -73,6 +80,64 @@ class StubLLMAdapter(LLMAdapter):
         if isinstance(raw, ExtractionError):
             return raw
         return [raw]
+
+    def extract_policy(self, text: str) -> PolicyExtractResponse | ExtractionError:
+        normalized = text.strip()
+        if len(normalized) < 20:
+            return ExtractionError(
+                message="Text is too short to extract policy methods.",
+                reason="text_too_short",
+            )
+
+        methods: list[PolicyMethod] = []
+        for match in re.finditer(
+            r"(?:OECD\s+)?TG\s*(\d{3,4})\b(?:\s*[:\-–—]\s*([^\n.;]{3,120}))?",
+            normalized,
+            flags=re.IGNORECASE,
+        ):
+            code = f"TG {match.group(1)}"
+            name = (match.group(2) or "").strip() or f"OECD Test Guideline {match.group(1)}"
+            if not any(item.code == code for item in methods):
+                methods.append(PolicyMethod(code=code, name=name, purpose=None))
+
+        document_name = None
+        title_match = re.search(
+            r"(?im)^(?:title|documento|document|resolu[cç][aã]o|guideline)\s*[:\-–—]\s*(.+)$",
+            normalized,
+        )
+        if title_match:
+            document_name = title_match.group(1).strip()[:240]
+
+        document_date = None
+        date_match = re.search(
+            r"\b(20\d{2}-\d{2}-\d{2}|\d{1,2}[./]\d{1,2}[./]20\d{2}|20\d{2})\b",
+            normalized,
+        )
+        if date_match:
+            document_date = date_match.group(1)
+
+        institution = None
+        for candidate in (
+            "CONCEA",
+            "OECD",
+            "ICH",
+            "ISO",
+            "EMA",
+            "FDA",
+            "ANVISA",
+            "NC3Rs",
+            "ECHA",
+        ):
+            if re.search(rf"\b{re.escape(candidate)}\b", normalized, flags=re.IGNORECASE):
+                institution = candidate
+                break
+
+        return PolicyExtractResponse(
+            methods=methods,
+            document_name=document_name,
+            document_date=document_date,
+            responsible_institution=institution,
+        )
 
     def _extract_single(self, text: str) -> RawExtraction | ExtractionError:
         normalized = text.strip()
@@ -536,6 +601,107 @@ class LlmCallAdapter(LLMAdapter):
         if isinstance(parsed, ExtractionError):
             log_extraction_error(parsed)
         return parsed
+
+    def extract_policy(self, text: str) -> PolicyExtractResponse | ExtractionError:
+        try:
+            import llmcall
+            from llmcall import CallConstraints, LLMError as LlmCallError
+        except ImportError:
+            return ExtractionError(message="llmcall package is not installed.")
+
+        result = llmcall.call(
+            self._model,
+            build_policy_extraction_prompt(text),
+            constraints=CallConstraints(
+                max_tokens=POLICY_EXTRACTION_MAX_TOKENS,
+                response_format="json",
+            ),
+        )
+        if isinstance(result, LlmCallError):
+            error = ExtractionError(
+                message=result.message,
+                reason="llm_api_error",
+            )
+            log_extraction_error(error)
+            return error
+
+        raw_content = result.content
+        try:
+            payload = _parse_json_payload(raw_content)
+        except json.JSONDecodeError as exc:
+            error = ExtractionError(
+                message=f"LLM response is not valid JSON: {exc}",
+                reason="json_decode_error",
+                raw_response=truncate_raw_response(raw_content),
+            )
+            log_extraction_error(error)
+            return error
+
+        parsed = _policy_from_payload(
+            payload,
+            raw_response=raw_content,
+        )
+        if isinstance(parsed, ExtractionError):
+            log_extraction_error(parsed)
+        return parsed
+
+
+def _nullable_str(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() in {"null", "none", "n/a", "na"}:
+        return None
+    return text
+
+
+def _policy_from_payload(
+    payload: object,
+    *,
+    raw_response: str | None = None,
+) -> PolicyExtractResponse | ExtractionError:
+    if not isinstance(payload, dict):
+        return ExtractionError(
+            message="LLM policy response must be a JSON object.",
+            reason="invalid_payload_type",
+            raw_response=truncate_raw_response(raw_response),
+        )
+
+    methods_raw = payload.get("methods", [])
+    if methods_raw is None:
+        methods_raw = []
+    if not isinstance(methods_raw, list):
+        return ExtractionError(
+            message="LLM policy response field 'methods' must be an array.",
+            reason="invalid_methods_type",
+            raw_response=truncate_raw_response(raw_response),
+        )
+
+    methods: list[PolicyMethod] = []
+    for item in methods_raw:
+        if not isinstance(item, dict):
+            continue
+        code = _nullable_str(item.get("code"))
+        name = _nullable_str(item.get("name"))
+        purpose = _nullable_str(item.get("purpose"))
+        if not code and not name:
+            continue
+        methods.append(
+            PolicyMethod(
+                code=code or "n/a",
+                name=name or code or "n/a",
+                purpose=purpose,
+            )
+        )
+
+    return PolicyExtractResponse(
+        methods=methods,
+        document_name=_nullable_str(payload.get("document_name")),
+        document_date=_nullable_str(payload.get("document_date")),
+        responsible_institution=_nullable_str(
+            payload.get("responsible_institution")
+        ),
+    )
 
 
 def build_llm_adapter(*, model: str, use_stub: bool) -> LLMAdapter:

@@ -279,6 +279,13 @@ export default function ResultsPage() {
                       ? t(`s3.validationStatus.${primaryContext.validation_status}`)
                       : null
                   }
+                  regulatoryStatus={
+                    primaryContext?.regulatory_status
+                      ? t(`s3.regulatoryStatus.${primaryContext.regulatory_status}`)
+                      : null
+                  }
+                  purpose={primaryContext?.purpose || null}
+                  purposeLabel={t('s3.purposeLabel')}
                   oecdTgRef={formatOecdReference(method.oecd_tg_ref)}
                   matchedParams={formatMatchedParams(item.matched_params, t)}
                   matchedParamsLabel={t('s3.matchedParams')}

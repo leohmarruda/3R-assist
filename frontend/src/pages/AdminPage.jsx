@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import Button from '../components/Button'
 import {
   deleteAdminRows,
+  extractPolicy,
   fetchAdminTable,
   fetchAdminTables,
   insertAdminRow,
+  matchPolicyMethod,
   updateAdminCell,
   updateAdminColumnComment,
 } from '../lib/admin'
+import { currentLanguage } from '../lib/i18n'
+import {
+  formatOecdReference,
+  formatJurisdictionBadges,
+  methodDescription,
+  methodDisplayName,
+  primaryValidationContext,
+  scorePercent,
+} from '../lib/search'
 
 const PAGE_SIZE = 10
-const MAIN_TABS = ['database', 'docs', 'settings']
+const MAIN_TABS = ['database', 'extract', 'docs', 'settings']
 
 function formatCell(value) {
   if (value === null || value === undefined) {
@@ -123,13 +135,24 @@ function AddRowModal({
   requiredColumns = [],
   foreignKeys = {},
   columnOptions = {},
+  mode = 'create',
+  initialValues = null,
+  lockedColumns = [],
+  primaryKey = null,
   onClose,
-  onCreated,
+  onSaved,
 }) {
   const { t } = useTranslation()
+  const isEdit = mode === 'edit'
   const requiredSet = new Set(requiredColumns)
+  const lockedSet = new Set(lockedColumns)
   const [values, setValues] = useState(() =>
-    Object.fromEntries(columns.map((column) => [column, ''])),
+    Object.fromEntries(
+      columns.map((column) => [
+        column,
+        initialValues ? toDraft(initialValues[column]) : '',
+      ]),
+    ),
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -145,6 +168,7 @@ function AddRowModal({
   }, [onClose, saving])
 
   function updateValue(column, value) {
+    if (lockedSet.has(column)) return
     setValues((current) => ({
       ...current,
       [column]: value,
@@ -156,7 +180,9 @@ function AddRowModal({
 
     const missing = columns.filter(
       (column) =>
-        requiredSet.has(column) && String(values[column] ?? '').trim() === '',
+        !lockedSet.has(column) &&
+        requiredSet.has(column) &&
+        String(values[column] ?? '').trim() === '',
     )
     if (missing.length > 0) {
       setError(t('admin.requiredFieldsMissing', { fields: missing.join(', ') }))
@@ -166,17 +192,42 @@ function AddRowModal({
     setSaving(true)
     setError(null)
     try {
-      const result = await insertAdminRow(table, values)
-      onCreated(result.row)
+      if (isEdit) {
+        if (!primaryKey) {
+          throw new Error(t('admin.editRowError'))
+        }
+        let lastRow = null
+        for (const column of columns) {
+          if (lockedSet.has(column)) continue
+          const nextValue = values[column] ?? ''
+          const previousValue = initialValues
+            ? toDraft(initialValues[column])
+            : ''
+          if (nextValue === previousValue) continue
+          const result = await updateAdminCell(table, {
+            primaryKey,
+            column,
+            value: nextValue,
+          })
+          lastRow = result.row
+        }
+        onSaved(lastRow)
+      } else {
+        const result = await insertAdminRow(table, values)
+        onSaved(result.row)
+      }
     } catch (err) {
-      setError(err.message ?? t('admin.addRowError'))
+      setError(
+        err.message ?? (isEdit ? t('admin.editRowError') : t('admin.addRowError')),
+      )
     } finally {
       setSaving(false)
     }
   }
 
   const fieldClass =
-    'w-full rounded border border-border-subtle bg-surface-container-lowest px-3 py-2 font-metadata text-metadata text-on-surface outline-none focus:border-primary'
+    'w-full rounded border border-border-subtle bg-surface-container-lowest px-3 py-2 font-metadata text-metadata text-on-surface outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60'
+  const firstEditableIndex = columns.findIndex((column) => !lockedSet.has(column))
 
   return (
     <div
@@ -191,15 +242,15 @@ function AddRowModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="add-row-title"
+        aria-labelledby="row-form-title"
         className="flex max-h-full w-full max-w-3xl flex-col rounded-lg border border-border-subtle bg-surface-container-lowest p-container-padding shadow-lg"
       >
         <div className="mb-card-gap flex items-start justify-between gap-3">
           <h2
-            id="add-row-title"
+            id="row-form-title"
             className="font-headline-lg text-headline-lg text-primary"
           >
-            {t('admin.addRow')}
+            {isEdit ? t('admin.editRow') : t('admin.addRow')}
           </h2>
           <CloseIconButton
             label={t('admin.close')}
@@ -218,10 +269,12 @@ function AddRowModal({
           {columns.map((column, index) => {
             const hint = comments?.[column]
             const type = types?.[column]
-            const required = requiredSet.has(column)
+            const locked = lockedSet.has(column)
+            const required = !locked && requiredSet.has(column)
             const options = columnOptions?.[column] ?? []
             const foreignKey = foreignKeys?.[column]
             const useSelect = options.length > 0
+            const autoFocus = index === firstEditableIndex
 
             return (
               <div
@@ -247,9 +300,9 @@ function AddRowModal({
                   </span>
                   {useSelect ? (
                     <select
-                      autoFocus={index === 0}
+                      autoFocus={autoFocus}
                       value={values[column] ?? ''}
-                      disabled={saving}
+                      disabled={saving || locked}
                       required={required}
                       onChange={(event) => updateValue(column, event.target.value)}
                       className={fieldClass}
@@ -271,9 +324,9 @@ function AddRowModal({
                   ) : (
                     <input
                       type="text"
-                      autoFocus={index === 0}
+                      autoFocus={autoFocus}
                       value={values[column] ?? ''}
-                      disabled={saving}
+                      disabled={saving || locked}
                       required={required}
                       onChange={(event) => updateValue(column, event.target.value)}
                       className={fieldClass}
@@ -476,7 +529,7 @@ function DatabasePanel() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [commentColumn, setCommentColumn] = useState(null)
-  const [showAddRow, setShowAddRow] = useState(false)
+  const [rowModal, setRowModal] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -524,7 +577,7 @@ function DatabasePanel() {
     setSelected({})
     setConfirmDelete(false)
     setCommentColumn(null)
-    setShowAddRow(false)
+    setRowModal(null)
     navigate(`/admin/database#${table}`, { replace: true })
   }
 
@@ -543,7 +596,7 @@ function DatabasePanel() {
       setSelected({})
       setConfirmDelete(false)
       setCommentColumn(null)
-      setShowAddRow(false)
+      setRowModal(null)
       try {
         const result = await fetchAdminTable(activeTable, {
           limit: PAGE_SIZE,
@@ -783,7 +836,8 @@ function DatabasePanel() {
                         onClick={() => {
                           setCommentColumn(null)
                           setConfirmDelete(false)
-                          setShowAddRow(true)
+                          setEdit(null)
+                          setRowModal({ mode: 'create' })
                         }}
                         className="font-metadata text-metadata text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                       >
@@ -846,6 +900,11 @@ function DatabasePanel() {
                                 />
                               </th>
                             ) : null}
+                            {primaryKey.length > 0 ? (
+                              <th className="w-16 whitespace-nowrap px-3 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                                {t('admin.edit')}
+                              </th>
+                            ) : null}
                             {tableData.columns.map((column) => {
                               const comment = tableData.column_comments?.[column] ?? null
                               return (
@@ -891,6 +950,23 @@ function DatabasePanel() {
                                       aria-label={t('admin.selectRow')}
                                       className="align-middle"
                                     />
+                                  </td>
+                                ) : null}
+                                {primaryKey.length > 0 ? (
+                                  <td className="w-16 whitespace-nowrap px-3 py-2 align-top">
+                                    <button
+                                      type="button"
+                                      disabled={saving || deleting}
+                                      onClick={() => {
+                                        setCommentColumn(null)
+                                        setConfirmDelete(false)
+                                        setEdit(null)
+                                        setRowModal({ mode: 'edit', row })
+                                      }}
+                                      className="font-metadata text-metadata text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                      {t('admin.edit')}
+                                    </button>
                                   </td>
                                 ) : null}
                                 {tableData.columns.map((column) => {
@@ -1047,8 +1123,9 @@ function DatabasePanel() {
             ) : null}
           </section>
 
-          {showAddRow && activeTable && tableData ? (
+          {rowModal && activeTable && tableData ? (
             <AddRowModal
+              key={`${rowModal.mode}-${rowModal.mode === 'edit' ? rowKey(rowModal.row, primaryKey) : 'new'}`}
               table={activeTable}
               columns={tableData.columns.filter(
                 (column) => !(tableData.auto_columns ?? []).includes(column),
@@ -1058,20 +1135,56 @@ function DatabasePanel() {
               requiredColumns={tableData.required_columns}
               foreignKeys={tableData.foreign_keys}
               columnOptions={tableData.column_options}
-              onClose={() => setShowAddRow(false)}
-              onCreated={async () => {
-                setShowAddRow(false)
+              mode={rowModal.mode}
+              initialValues={rowModal.mode === 'edit' ? rowModal.row : null}
+              lockedColumns={
+                rowModal.mode === 'edit' ? (tableData.primary_key ?? []) : []
+              }
+              primaryKey={
+                rowModal.mode === 'edit'
+                  ? primaryKeyValues(rowModal.row, primaryKey)
+                  : null
+              }
+              onClose={() => setRowModal(null)}
+              onSaved={async (savedRow) => {
+                const wasCreate = rowModal.mode === 'create'
+                setRowModal(null)
                 setSelected({})
                 setConfirmDelete(false)
                 setEdit(null)
-                if (page !== 0) {
-                  setPage(0)
+                if (wasCreate) {
+                  if (page !== 0) {
+                    setPage(0)
+                    return
+                  }
+                  try {
+                    const refreshed = await fetchAdminTable(activeTable, {
+                      limit: PAGE_SIZE,
+                      offset: 0,
+                    })
+                    setTableData(refreshed)
+                  } catch (err) {
+                    setError(err.message ?? t('admin.loadError'))
+                  }
+                  return
+                }
+                if (savedRow) {
+                  setTableData((current) => {
+                    if (!current) return current
+                    const key = rowKey(savedRow, current.primary_key)
+                    return {
+                      ...current,
+                      rows: current.rows.map((row) =>
+                        rowKey(row, current.primary_key) === key ? savedRow : row,
+                      ),
+                    }
+                  })
                   return
                 }
                 try {
                   const refreshed = await fetchAdminTable(activeTable, {
                     limit: PAGE_SIZE,
-                    offset: 0,
+                    offset: page * PAGE_SIZE,
                   })
                   setTableData(refreshed)
                 } catch (err) {
@@ -1114,6 +1227,352 @@ function PlaceholderPanel({ messageKey }) {
     <p className="font-body-base text-body-base text-on-secondary-container opacity-65">
       {t(messageKey)}
     </p>
+  )
+}
+
+const POLICY_TEXT_MIN = 20
+const POLICY_TEXT_MAX = 50000
+
+function ExpandArrow({ open }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      className={`h-3.5 w-3.5 transition-transform duration-ethos ${
+        open ? 'rotate-90' : ''
+      }`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 4l4 4-4 4" />
+    </svg>
+  )
+}
+
+function ExtractedMethodRow({ method }) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language?.startsWith('pt') ? 'pt' : 'en'
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [matchResult, setMatchResult] = useState(null)
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (!next || matchResult !== null || loading) return
+
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await matchPolicyMethod({
+        code: method.code,
+        name: method.name,
+        purpose: method.purpose,
+      })
+      setMatchResult(result)
+    } catch (err) {
+      setError(err.message ?? t('admin.extract.matchError'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const matches = matchResult?.matches ?? []
+  const colSpan = 4
+
+  return (
+    <>
+      <tr>
+        <td className="w-10 px-2 py-2 align-top">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-expanded={open}
+            aria-label={
+              open
+                ? t('admin.extract.collapseMatches')
+                : t('admin.extract.expandMatches')
+            }
+            title={
+              open
+                ? t('admin.extract.collapseMatches')
+                : t('admin.extract.expandMatches')
+            }
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-on-secondary-container transition-colors hover:bg-surface-container hover:text-primary"
+          >
+            <ExpandArrow open={open} />
+          </button>
+        </td>
+        <td className="whitespace-nowrap px-3 py-2 align-top text-on-surface">
+          {method.code}
+        </td>
+        <td className="px-3 py-2 align-top text-on-surface">{method.name}</td>
+        <td className="px-3 py-2 align-top text-on-surface">
+          {method.purpose || t('admin.extract.notFound')}
+        </td>
+      </tr>
+      {open ? (
+        <tr className="bg-surface-container/40">
+          <td colSpan={colSpan} className="px-3 py-3">
+            {loading ? (
+              <p className="font-metadata text-metadata text-on-secondary-container">
+                {t('admin.extract.matching')}
+              </p>
+            ) : error ? (
+              <p className="font-metadata text-metadata text-error" role="alert">
+                {error}
+              </p>
+            ) : matches.length === 0 ? (
+              <p className="font-metadata text-metadata text-on-secondary-container opacity-65">
+                {t('admin.extract.noMatches')}
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {matches.map((candidate) => {
+                  const dbMethod = candidate.method
+                  const oecd = formatOecdReference(dbMethod.oecd_tg_ref)
+                  const contexts = dbMethod.validation_contexts ?? []
+                  const primaryContext = primaryValidationContext(contexts)
+                  return (
+                    <li
+                      key={`${candidate.match_kind}-${dbMethod.id}`}
+                      className="rounded-md border border-border-subtle bg-surface-container-lowest px-3 py-2"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="font-metadata text-metadata text-on-surface">
+                          {methodDisplayName(dbMethod, lang)}
+                          <span className="ml-2 opacity-65">
+                            ({dbMethod.slug})
+                          </span>
+                        </p>
+                        <p className="font-metadata text-metadata text-on-secondary-container">
+                          {candidate.match_kind === 'oecd_tg_ref'
+                            ? t('admin.extract.matchByOecd')
+                            : t('admin.extract.matchByText')}
+                          {' · '}
+                          {scorePercent(candidate.score)}%
+                          {!dbMethod.active
+                            ? ` · ${t('admin.extract.inactive')}`
+                            : ''}
+                        </p>
+                      </div>
+                      <p className="mt-1 font-metadata text-metadata text-on-secondary-container opacity-80">
+                        {[
+                          oecd,
+                          dbMethod.endpoint_category,
+                          dbMethod.study_domain,
+                          dbMethod.source_db,
+                          contexts.length
+                            ? formatJurisdictionBadges(contexts, t)
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                      {primaryContext?.purpose ? (
+                        <p className="mt-1 font-metadata text-metadata text-on-secondary-container">
+                          {t('s3.purposeLabel')}: {primaryContext.purpose}
+                        </p>
+                      ) : null}
+                      {primaryContext?.regulatory_status ? (
+                        <p className="mt-1 font-metadata text-metadata text-on-secondary-container">
+                          {t('admin.extract.regulatoryStatus')}:{' '}
+                          {t(
+                            `s3.regulatoryStatus.${primaryContext.regulatory_status}`,
+                          )}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 font-metadata text-metadata text-on-secondary-container opacity-65">
+                        {methodDescription(dbMethod, lang)}
+                      </p>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </td>
+        </tr>
+      ) : null}
+    </>
+  )
+}
+
+function ExtractPanel() {
+  const { t } = useTranslation()
+  const [text, setText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [error, setError] = useState(null)
+  const [result, setResult] = useState(null)
+
+  useEffect(() => {
+    if (!submitting) {
+      setElapsedSeconds(0)
+      return undefined
+    }
+
+    setElapsedSeconds(0)
+    const startedAt = Date.now()
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000))
+    }, 250)
+
+    return () => window.clearInterval(timer)
+  }, [submitting])
+
+  const trimmedLength = text.trim().length
+  const canSubmit = trimmedLength >= POLICY_TEXT_MIN && !submitting
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    if (!canSubmit) return
+
+    setError(null)
+    setSubmitting(true)
+    try {
+      const extracted = await extractPolicy({
+        text: text.trim(),
+        lang: currentLanguage(),
+      })
+      setResult(extracted)
+    } catch (err) {
+      setResult(null)
+      setError(err.message ?? t('admin.extract.error'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="space-y-section-gap">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-lg border border-border-subtle bg-surface-container-lowest p-container-padding"
+      >
+        <label
+          htmlFor="policy-extraction-text"
+          className="mb-card-gap block font-label-caps text-label-caps uppercase text-on-surface-variant"
+        >
+          {t('admin.extract.policyLabel')}
+        </label>
+        <div className="relative">
+          <textarea
+            id="policy-extraction-text"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            maxLength={POLICY_TEXT_MAX}
+            rows={12}
+            disabled={submitting}
+            placeholder={t('admin.extract.policyPlaceholder')}
+            className="w-full resize-y rounded-lg border border-border-emphasis bg-surface-container-low p-container-padding font-monospace-data text-monospace-data text-on-surface outline-none transition-colors duration-ethos placeholder:text-text-tertiary focus:border-primary disabled:opacity-60"
+          />
+          <div
+            className="pointer-events-none absolute bottom-4 right-4 font-metadata text-metadata text-text-tertiary"
+            aria-live="polite"
+          >
+            {t('admin.extract.charCount', {
+              count: text.length,
+              max: POLICY_TEXT_MAX,
+            })}
+          </div>
+        </div>
+
+        {trimmedLength > 0 && trimmedLength < POLICY_TEXT_MIN ? (
+          <p className="mt-card-gap font-metadata text-metadata text-error" role="alert">
+            {t('admin.extract.tooShort', { min: POLICY_TEXT_MIN })}
+          </p>
+        ) : null}
+
+        {error ? (
+          <p className="mt-card-gap font-metadata text-metadata text-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="mt-card-gap flex justify-end">
+          <Button type="submit" disabled={!canSubmit}>
+            {submitting
+              ? t('admin.extract.submittingSeconds', { seconds: elapsedSeconds })
+              : t('admin.extract.submit')}
+          </Button>
+        </div>
+      </form>
+
+      {result ? (
+        <section className="rounded-lg border border-border-subtle bg-surface-container-lowest p-container-padding">
+          <h2 className="mb-card-gap font-headline-lg text-headline-lg text-primary">
+            {t('admin.extract.resultsTitle')}
+          </h2>
+
+          <dl className="mb-card-gap grid gap-card-gap sm:grid-cols-3">
+            <div>
+              <dt className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+                {t('admin.extract.documentName')}
+              </dt>
+              <dd className="mt-1 font-metadata text-metadata text-on-surface">
+                {result.document_name || t('admin.extract.notFound')}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+                {t('admin.extract.documentDate')}
+              </dt>
+              <dd className="mt-1 font-metadata text-metadata text-on-surface">
+                {result.document_date || t('admin.extract.notFound')}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-label-caps text-label-caps uppercase text-on-surface-variant">
+                {t('admin.extract.institution')}
+              </dt>
+              <dd className="mt-1 font-metadata text-metadata text-on-surface">
+                {result.responsible_institution || t('admin.extract.notFound')}
+              </dd>
+            </div>
+          </dl>
+
+          <h3 className="mb-2 font-label-caps text-label-caps uppercase text-on-surface-variant">
+            {t('admin.extract.methods')}
+          </h3>
+          {result.methods?.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[28rem] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-border-subtle">
+                    <th className="w-10 px-2 py-2" aria-label={t('admin.extract.match')} />
+                    <th className="px-3 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                      {t('admin.extract.methodCode')}
+                    </th>
+                    <th className="px-3 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                      {t('admin.extract.methodName')}
+                    </th>
+                    <th className="px-3 py-2 font-label-caps text-label-caps uppercase text-on-surface-variant">
+                      {t('admin.extract.methodPurpose')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle font-metadata text-metadata">
+                  {result.methods.map((method, index) => (
+                    <ExtractedMethodRow
+                      key={`${method.code}-${method.name}-${index}`}
+                      method={method}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="font-metadata text-metadata text-on-secondary-container opacity-65">
+              {t('admin.extract.noMethods')}
+            </p>
+          )}
+        </section>
+      ) : null}
+    </div>
   )
 }
 
@@ -1170,6 +1629,8 @@ export default function AdminPage() {
       >
         {activeSection === 'database' ? (
           <DatabasePanel />
+        ) : activeSection === 'extract' ? (
+          <ExtractPanel />
         ) : activeSection === 'docs' ? (
           <PlaceholderPanel messageKey="admin.docs.placeholder" />
         ) : (

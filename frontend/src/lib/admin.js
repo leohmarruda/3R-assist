@@ -46,3 +46,25 @@ export function updateAdminColumnComment(tableName, column, comment) {
     },
   )
 }
+
+export function extractPolicy({ text, lang }) {
+  return apiFetch('/admin/extract/policy', {
+    method: 'POST',
+    body: JSON.stringify({
+      text,
+      ...(lang ? { lang } : {}),
+    }),
+  })
+}
+
+export function matchPolicyMethod({ code, name, purpose, limit = 5 }) {
+  return apiFetch('/admin/extract/policy/match-method', {
+    method: 'POST',
+    body: JSON.stringify({
+      code,
+      name,
+      purpose: purpose ?? null,
+      limit,
+    }),
+  })
+}

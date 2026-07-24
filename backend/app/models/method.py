@@ -7,6 +7,7 @@ ThreeRClass = Literal["replacement", "reduction", "refinement"]
 RegulatoryJurisdiction = Literal["brazil", "eu", "us", "oecd"]
 StudyDomain = Literal["pharma", "cosmetics", "chemical_safety", "general"]
 ValidationStatus = Literal["validated", "accepted", "emerging"]
+RegulatoryStatus = Literal["not_approved", "approved", "recommended", "mandatory"]
 SourceDb = Literal["OECD_TG", "ECVAM_DBALM", "NICEATM", "FARMACOPEIA_BR", "TSAR"]
 
 _THREE_R_ORDER: tuple[ThreeRClass, ...] = ("replacement", "reduction", "refinement")
@@ -16,6 +17,8 @@ class MethodValidationContext(BaseModel):
     study_domain: StudyDomain
     jurisdiction: RegulatoryJurisdiction
     validation_status: ValidationStatus
+    purpose: str | None = None
+    regulatory_status: RegulatoryStatus | None = None
     regulatory_body: str | None = None
     regulatory_ref: str | None = None
     regulatory_url: str | None = None

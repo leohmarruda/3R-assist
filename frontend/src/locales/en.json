@@ -47,8 +47,11 @@
     "noCommentHint": "No comment",
     "close": "Close",
     "addRow": "Add row",
+    "edit": "Edit",
+    "editRow": "Edit row",
     "ok": "OK",
     "addRowError": "Could not add row.",
+    "editRowError": "Could not update row.",
     "requiredFieldsMissing": "Required fields missing: {{fields}}",
     "selectRequired": "Select…",
     "selectOptional": "— None —",
@@ -58,6 +61,37 @@
     "database": {
       "label": "Database",
       "subtitle": "Browse and edit public PostgreSQL tables. Double-click a cell to edit."
+    },
+    "extract": {
+      "label": "Extract",
+      "subtitle": "Extract approved methods and document metadata from policy text.",
+      "policyLabel": "Policy extraction",
+      "policyPlaceholder": "Paste a policy, guideline, or regulation text…",
+      "charCount": "{{count}} / {{max}}",
+      "tooShort": "Minimum {{min}} characters",
+      "submit": "Extract",
+      "submittingSeconds": "Extracting… {{seconds}}s",
+      "error": "Could not extract policy data.",
+      "resultsTitle": "Extraction results",
+      "documentName": "Document name",
+      "documentDate": "Document date",
+      "institution": "Responsible institution",
+      "methods": "Approved / recognized methods",
+      "methodCode": "Code",
+      "methodName": "Name",
+      "methodPurpose": "Purpose",
+      "noMethods": "No approved or recognized methods found.",
+      "notFound": "—",
+      "match": "Match",
+      "expandMatches": "Match against database methods",
+      "collapseMatches": "Hide database matches",
+      "matching": "Matching against database…",
+      "matchError": "Could not match method against the database.",
+      "noMatches": "No matching methods found in the database.",
+      "matchByOecd": "OECD TG ref",
+      "matchByText": "Text similarity",
+      "regulatoryStatus": "Regulatory status",
+      "inactive": "inactive"
     },
     "docs": {
       "label": "Docs",
@@ -214,6 +248,13 @@
       "accepted": "Accepted",
       "emerging": "Emerging"
     },
+    "regulatoryStatus": {
+      "not_approved": "Not approved",
+      "approved": "Approved",
+      "recommended": "Recommended",
+      "mandatory": "Mandatory"
+    },
+    "purposeLabel": "Purpose",
     "threeR": {
       "replacement": "Replacement",
       "reduction": "Reduction",

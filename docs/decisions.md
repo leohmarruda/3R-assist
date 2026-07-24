@@ -486,6 +486,8 @@ CREATE TABLE method_validation_contexts (
     study_domain      TEXT    NOT NULL,  -- 'general' | 'pharma' | 'cosmetics' | 'chemical_safety'
     jurisdiction      TEXT    NOT NULL,  -- 'brazil' | 'eu' | 'us' | 'oecd'
     validation_status TEXT    NOT NULL,  -- 'validated' | 'accepted' | 'emerging'
+    purpose           TEXT,             -- what the method is recognized/validated for in this context
+    regulatory_status TEXT,             -- 'not_approved' | 'approved' | 'recommended' | 'mandatory'
     regulatory_body   TEXT,             -- 'CONCEA' | 'ANVISA' | 'ECHA' | 'EMA' | 'EPA' | 'FDA' | 'ICCVAM' | 'OECD'
     regulatory_ref    TEXT,             -- e.g. 'RN 18/2014 Art. 2' | 'TG 439' | 'Reg 1223/2009'
     regulatory_url    TEXT,

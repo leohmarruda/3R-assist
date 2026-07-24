@@ -47,8 +47,11 @@
     "noCommentHint": "Sem comentário",
     "close": "Fechar",
     "addRow": "Adicionar registro",
+    "edit": "Editar",
+    "editRow": "Editar registro",
     "ok": "OK",
     "addRowError": "Não foi possível adicionar o registro.",
+    "editRowError": "Não foi possível atualizar o registro.",
     "requiredFieldsMissing": "Campos obrigatórios em falta: {{fields}}",
     "selectRequired": "Selecione…",
     "selectOptional": "— Nenhum —",
@@ -58,6 +61,37 @@
     "database": {
       "label": "Banco de dados",
       "subtitle": "Navegue e edite as tabelas públicas do PostgreSQL. Clique duas vezes em uma célula para editar."
+    },
+    "extract": {
+      "label": "Extrair",
+      "subtitle": "Extraia métodos aprovados e metadados documentais a partir de textos de política.",
+      "policyLabel": "Extração de política",
+      "policyPlaceholder": "Cole o texto de uma política, diretriz ou regulamento…",
+      "charCount": "{{count}} / {{max}}",
+      "tooShort": "Mínimo de {{min}} caracteres",
+      "submit": "Extrair",
+      "submittingSeconds": "Extraindo… {{seconds}}s",
+      "error": "Não foi possível extrair os dados da política.",
+      "resultsTitle": "Resultados da extração",
+      "documentName": "Nome do documento",
+      "documentDate": "Data do documento",
+      "institution": "Instituição responsável",
+      "methods": "Métodos aprovados / reconhecidos",
+      "methodCode": "Código",
+      "methodName": "Nome",
+      "methodPurpose": "Finalidade",
+      "noMethods": "Nenhum método aprovado ou reconhecido encontrado.",
+      "notFound": "—",
+      "match": "Correspondência",
+      "expandMatches": "Buscar correspondências no banco",
+      "collapseMatches": "Ocultar correspondências",
+      "matching": "Buscando no banco…",
+      "matchError": "Não foi possível buscar correspondências no banco.",
+      "noMatches": "Nenhum método correspondente encontrado no banco.",
+      "matchByOecd": "Ref. OECD TG",
+      "matchByText": "Similaridade textual",
+      "regulatoryStatus": "Status regulatório",
+      "inactive": "inativo"
     },
     "docs": {
       "label": "Docs",
@@ -214,6 +248,13 @@
       "accepted": "Aceito",
       "emerging": "Emergente"
     },
+    "regulatoryStatus": {
+      "not_approved": "Não aprovado",
+      "approved": "Aprovado",
+      "recommended": "Recomendado",
+      "mandatory": "Obrigatório"
+    },
+    "purposeLabel": "Finalidade",
     "threeR": {
       "replacement": "Substituição",
       "reduction": "Redução",

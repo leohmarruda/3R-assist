@@ -79,6 +79,44 @@ def _sql_string_literal(value: str | None) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+_CHECK_IN_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\b\s+IN\s*\(([^)]*)\)",
+    re.IGNORECASE,
+)
+_CHECK_ANY_RE = re.compile(
+    r"\b([A-Za-z_][A-Za-z0-9_]*)\b\s*=\s*ANY\s*\(\s*ARRAY\[(.*?)\]",
+    re.IGNORECASE | re.DOTALL,
+)
+_SQL_STRING_RE = re.compile(r"'((?:''|[^'])*)'")
+
+
+def _parse_check_enum_options(definition: str) -> dict[str, list[str]]:
+    """Extract column -> allowed string values from a CHECK constraint definition."""
+    found: dict[str, list[str]] = {}
+
+    def add(column: str, values: list[str]) -> None:
+        if not values:
+            return
+        # Keep first unique set if multiple clauses mention the same column.
+        found.setdefault(column, values)
+
+    for match in _CHECK_IN_RE.finditer(definition):
+        column = match.group(1)
+        values = [
+            item.replace("''", "'") for item in _SQL_STRING_RE.findall(match.group(2))
+        ]
+        add(column, values)
+
+    for match in _CHECK_ANY_RE.finditer(definition):
+        column = match.group(1)
+        values = [
+            item.replace("''", "'") for item in _SQL_STRING_RE.findall(match.group(2))
+        ]
+        add(column, values)
+
+    return found
+
+
 def _coerce_value(value: Any, data_type: str, udt_name: str) -> Any:
     if value is None:
         return None
@@ -252,6 +290,33 @@ class AdminRepository:
             }
         return foreign_keys
 
+    async def _check_constraint_options(
+        self,
+        conn,
+        table_name: str,
+    ) -> dict[str, list[dict[str, Any]]]:
+        rows = await conn.fetch(
+            """
+            SELECT pg_get_constraintdef(c.oid) AS definition
+            FROM pg_catalog.pg_constraint c
+            JOIN pg_catalog.pg_class rel ON rel.oid = c.conrelid
+            JOIN pg_catalog.pg_namespace nsp ON nsp.oid = rel.relnamespace
+            WHERE c.contype = 'c'
+              AND nsp.nspname = 'public'
+              AND rel.relname = $1
+            """,
+            table_name,
+        )
+        options: dict[str, list[dict[str, Any]]] = {}
+        for row in rows:
+            parsed = _parse_check_enum_options(row["definition"] or "")
+            for column, values in parsed.items():
+                if column in options:
+                    continue
+                options[column] = [
+                    {"value": value, "label": value} for value in values
+                ]
+        return options
 
     async def _label_column(
         self, conn, table_name: str, value_column: str
@@ -397,6 +462,10 @@ class AdminRepository:
                     foreign_table=reference["table"],
                     foreign_column=reference["column"],
                 )
+            for column, options in (
+                await self._check_constraint_options(conn, table_name)
+            ).items():
+                column_options.setdefault(column, options)
 
         serialized_rows = [_serialize_row(row) for row in rows]
         columns = [row["column_name"] for row in column_rows]

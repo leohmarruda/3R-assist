@@ -21,6 +21,9 @@ export default function ResultCard({
   jurisdiction = 'Brasil / Intl.',
   dimmed = false,
   validationStatus,
+  regulatoryStatus,
+  purpose,
+  purposeLabel,
   oecdTgRef,
   matchedParams = [],
   description,
@@ -88,7 +91,17 @@ export default function ResultCard({
             {validationStatus}
           </span>
         )}
+        {regulatoryStatus && (
+          <span className="rounded border border-border-subtle bg-surface-container px-2 py-0.5 font-badge-button text-badge-button text-on-surface">
+            {regulatoryStatus}
+          </span>
+        )}
       </div>
+      {purpose ? (
+        <p className="mt-2 font-metadata text-metadata text-on-secondary-container">
+          {purposeLabel ? `${purposeLabel}: ${purpose}` : purpose}
+        </p>
+      ) : null}
       {matchedParams.length > 0 && (
         <p className="mt-3 font-metadata text-metadata text-on-surface-variant">
           {matchedParamsLabel}: {matchedParams.join(', ')}
